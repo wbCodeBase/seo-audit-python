@@ -1,0 +1,1766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Free SEO Audit Tool — AI Powered</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  /* dark theme (form/loading/error pages) */
+  --navy:#0a0f1e;--navy2:#0d1425;--navy3:#111827;
+  --card:#121a2e;--card2:#161f35;
+  --blue:#3b82f6;--blue2:#2563eb;--blue-glow:rgba(59,130,246,.35);
+  --cyan:#06b6d4;--cyan-glow:rgba(6,182,212,.2);
+  --border-d:rgba(255,255,255,.08);--border-d2:rgba(59,130,246,.25);
+  --txt-d:#f0f4ff;--sub-d:#8b9ab5;--lite-d:#4a5568;
+  /* report (light, printable) */
+  --red:#c0392b;--red2:#9b2b2b;--green:#1e8449;--warn:#b7770d;
+  --fail:#c0392b;--info:#1a5276;--text:#1c2b3a;--sub:#5d6d7e;
+  --lite:#95a5a6;--border:#dde1e7;--bg:#eef0f4;--white:#fff;
+  --sh:0 4px 24px rgba(0,0,0,.1);--sh2:0 8px 40px rgba(0,0,0,.14);
+  --r:10px;--r2:16px;--font:'Sora',sans-serif;--disp:'Fraunces',serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--navy);color:var(--txt-d);font-size:13.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.hidden{display:none!important}
+button{font-family:var(--font);cursor:pointer}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse-ring{0%{transform:scale(.95);opacity:.6}70%{transform:scale(1.08);opacity:0}100%{transform:scale(.95);opacity:0}}
+
+/* ── FORM PAGE ── */
+/* ── FORM PAGE ── */
+/* ══ HERO PAGE ══ */
+#page-form{
+  min-height:100vh;
+  background:#0d1b2e;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(30,90,160,0.35) 0%, transparent 70%),
+    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.022'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  padding:0;
+  font-family:var(--font);
+  position:relative;
+  overflow:hidden;
+}
+.hero-top{
+  width:100%;
+  text-align:center;
+  padding:72px 20px 52px;
+  position:relative;
+  z-index:2;
+}
+.hero-headline{
+  font-size:clamp(36px,6vw,64px);
+  font-weight:800;
+  line-height:1.1;
+  color:#ffffff;
+  letter-spacing:-.03em;
+  margin-bottom:18px;
+}
+.hero-headline .accent{
+  color:#3b9eff;
+}
+.hero-sub{
+  font-size:clamp(14px,2vw,17px);
+  color:#8ba4c4;
+  line-height:1.65;
+  max-width:520px;
+  margin:0 auto;
+}
+/* Form card */
+.form-card{
+  width:100%;
+  max-width:560px;
+  background:#111e30;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  padding:32px 32px 28px;
+  position:relative;
+  z-index:2;
+  box-shadow:0 24px 80px rgba(0,0,0,.5);
+  margin:0 20px 48px;
+}
+.flabel{
+  display:block;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:#5a7a9e;
+  margin-bottom:6px;
+}
+input[type=url],input[type=text],input[type=email]{
+  width:100%;
+  box-sizing:border-box;
+  background:#0d1b2e;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:10px;
+  padding:12px 14px;
+  font-size:14px;
+  font-family:var(--font);
+  color:#e8f0ff;
+  outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+input::placeholder{color:#3a5270}
+input:focus{border-color:#3b9eff;box-shadow:0 0 0 3px rgba(59,158,255,.18)}
+input.err{border-color:#ef4444}
+.fgroup{margin-bottom:16px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:0}
+.errmsg{color:#ef4444;font-size:11px;margin-top:4px;display:none}
+.btn-run{
+  width:100%;
+  padding:15px;
+  background:linear-gradient(90deg,#3b9eff,#00ccff);
+  border:none;
+  border-radius:12px;
+  color:#fff;
+  font-family:var(--font);
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:.01em;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  margin-top:20px;
+  margin-bottom:20px;
+  transition:opacity .15s,box-shadow .15s,transform .15s;
+  box-shadow:0 4px 24px rgba(59,158,255,.35);
+}
+.btn-run:hover{opacity:.92;transform:translateY(-1px);box-shadow:0 8px 32px rgba(59,158,255,.45)}
+.btn-run:active{transform:translateY(0)}
+.btn-run:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.feats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:6px 10px;
+}
+.feat{
+  font-size:12px;
+  color:#5a7a9e;
+  display:flex;
+  align-items:center;
+  gap:5px;
+}
+.ck{color:#3b9eff;font-weight:700}
+/* Bottom trust bar */
+.trust-bar{
+  width:100%;
+  border-top:1px solid rgba(255,255,255,.06);
+  padding:14px 20px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:28px;
+  flex-wrap:wrap;
+  position:relative;
+  z-index:2;
+  margin-top:auto;
+}
+.trust-item{
+  font-size:12px;
+  color:#3d5a78;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.trust-item .tck{color:#3b9eff;font-size:11px;font-weight:700}
+@media(max-width:520px){
+  .frow{grid-template-columns:1fr}
+  .feats{grid-template-columns:repeat(2,1fr)}
+  .form-card{padding:22px 18px 20px;margin:0 12px 32px}
+  .hero-top{padding:52px 20px 36px}
+  .trust-bar{gap:16px}
+}
+#page-loading{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:32px 16px;
+  background:radial-gradient(ellipse 80% 60% at 50% 20%,#0d2045 0%,var(--navy) 70%);
+}
+.load-card{
+  background:rgba(255,255,255,.04);border:1px solid var(--border-d);
+  border-radius:20px;padding:46px 38px;max-width:480px;width:100%;
+  text-align:center;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  box-shadow:0 24px 48px rgba(0,0,0,.4);animation:scaleIn .4s ease;
+}
+.spin-wrap{position:relative;width:72px;height:72px;margin:0 auto 26px}
+.spin-outer{width:72px;height:72px;border:3px solid rgba(255,255,255,.08);border-top-color:var(--blue);border-radius:50%;animation:spin .9s linear infinite;position:absolute}
+.spin-inner{width:46px;height:46px;border:3px solid transparent;border-top-color:var(--cyan);border-radius:50%;animation:spin .6s linear infinite reverse;position:absolute;top:13px;left:13px}
+.spin-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+.l-domain{font-size:16px;font-weight:700;margin-bottom:5px;color:#fff}
+.l-step{font-size:12.5px;color:var(--sub-d);margin-bottom:22px;min-height:19px}
+.pbar-wrap{background:rgba(255,255,255,.07);border-radius:10px;height:6px;overflow:hidden;margin-bottom:6px}
+.pbar-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:10px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+.pbar-pct{font-size:11.5px;color:var(--sub-d);margin-bottom:22px}
+.steps-log{display:flex;flex-direction:column;gap:5px;max-height:170px;overflow:hidden;text-align:left}
+.slog{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--cyan);animation:slideIn .22s ease}
+
+/* ── ERROR PAGE ── */
+#page-error{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:32px 16px;
+  background:radial-gradient(ellipse 80% 60% at 50% 20%,#1a0d1f 0%,var(--navy) 70%);
+}
+.err-card{
+  background:rgba(255,255,255,.04);border:1px solid rgba(239,68,68,.2);
+  border-radius:20px;padding:46px 38px;max-width:460px;width:100%;
+  text-align:center;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  box-shadow:0 24px 48px rgba(0,0,0,.4);
+}
+.err-icon{font-size:48px;margin-bottom:16px}
+.err-title{font-size:19px;font-weight:700;margin-bottom:10px;color:#f87171}
+.err-msg{font-size:13px;color:var(--sub-d);margin-bottom:24px;line-height:1.65}
+.btn-retry{
+  background:linear-gradient(135deg,var(--blue),var(--cyan));
+  color:#fff;border:none;border-radius:10px;
+  padding:12px 28px;font-size:13.5px;font-weight:600;cursor:pointer;
+  box-shadow:0 4px 16px var(--blue-glow);transition:transform .15s;
+}
+.btn-retry:hover{transform:translateY(-1px)}
+
+/* ══════════════════════════════════════════════
+   PREMIUM AGENCY REPORT STYLES
+   ══════════════════════════════════════════════ */
+
+/* ── Palette overrides for report ── */
+:root{
+  --ag-ink:#0f172a;
+  --ag-sub:#475569;
+  --ag-mute:#94a3b8;
+  --ag-border:#e2e8f0;
+  --ag-bg:#f8fafc;
+  --ag-card:#ffffff;
+  --ag-accent:#0ea5e9;
+  --ag-pass:#059669;
+  --ag-warn:#d97706;
+  --ag-fail:#dc2626;
+  --ag-pass-bg:#ecfdf5;
+  --ag-warn-bg:#fffbeb;
+  --ag-fail-bg:#fef2f2;
+  --ag-pass-border:#a7f3d0;
+  --ag-warn-border:#fde68a;
+  --ag-fail-border:#fecaca;
+}
+
+/* ── Page shell ── */
+#page-report{
+  background:#f5f7fa;
+  padding:28px 14px 56px;
+  min-height:100vh;
+}
+.rpt-wrap{max-width:920px;margin:0 auto}
+
+/* ── Toolbar ── */
+.toolbar{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:18px;gap:10px;flex-wrap:wrap;
+}
+.toolbar-info{
+  font-size:12px;color:#6b7280;
+  display:flex;align-items:center;gap:6px;
+  background:#fff;border:1px solid #e5e7eb;
+  border-radius:30px;padding:5px 14px;
+}
+.tbtns{display:flex;gap:8px}
+.btn-p{
+  background:#e8453c;color:#fff;border:none;border-radius:8px;
+  padding:9px 18px;font-size:12px;font-weight:600;font-family:var(--font);
+  display:flex;align-items:center;gap:6px;cursor:pointer;
+  transition:background .15s,transform .12s;
+}
+.btn-p:hover{background:#c73b33;transform:translateY(-1px)}
+.btn-g{
+  background:#fff;color:#374151;border:1px solid #e5e7eb;
+  border-radius:8px;padding:9px 15px;font-size:12px;font-weight:500;
+  font-family:var(--font);display:flex;align-items:center;gap:5px;cursor:pointer;
+  transition:background .14s;
+}
+.btn-g:hover{background:#f9fafb}
+
+/* ── Report card ── */
+#rpt{
+  background:#fff;
+  border-radius:12px;
+  overflow:hidden;
+  border:1px solid #e5e7eb;
+  box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 20px rgba(0,0,0,.06);
+}
+
+/* ── Cover header ── */
+.rpt-hdr{
+  background:#e8453c;
+  padding:32px 36px 28px;
+  color:#fff;
+  position:relative;overflow:hidden;
+}
+.rpt-hdr::before{
+  content:'';position:absolute;
+  top:-80px;right:-80px;width:280px;height:280px;border-radius:50%;
+  background:rgba(255,255,255,.07);pointer-events:none;
+}
+.rpt-hdr::after{
+  content:'';position:absolute;
+  bottom:-60px;left:60px;width:200px;height:200px;border-radius:50%;
+  background:rgba(255,255,255,.04);pointer-events:none;
+}
+.rpt-hdr-top{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  gap:14px;flex-wrap:wrap;margin-bottom:12px;position:relative;z-index:1;
+}
+.rpt-hdr h2{
+  font-size:24px;font-weight:700;margin-bottom:4px;letter-spacing:-.02em;
+}
+.rpt-hdr-sub{font-size:12px;opacity:.75}
+.hdr-brand{font-size:11px;opacity:.8;text-align:right;line-height:1.9}
+.rpt-hdr-desc{
+  font-size:12.5px;line-height:1.75;
+  color:rgba(255,255,255,.88);
+  max-width:680px;position:relative;z-index:1;
+}
+
+/* ── Score summary ── */
+.summary{
+  display:grid;grid-template-columns:240px 1fr;
+  border-bottom:1px solid #f3f4f6;
+}
+@media(max-width:620px){.summary{grid-template-columns:1fr}}
+.sum-left{
+  padding:28px 20px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  border-right:1px solid #f3f4f6;
+  background:#fafafa;
+}
+.ov-lbl{font-size:11px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.08em;text-align:center}
+.sum-right{padding:24px 28px}
+.sum-rt-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#9ca3af;margin-bottom:14px}
+.cat-grades{display:flex;gap:20px;margin-bottom:16px;flex-wrap:wrap}
+.cat-g{display:flex;flex-direction:column;align-items:center;gap:5px}
+.cat-g-lbl{font-size:10px;color:#6b7280;text-align:center;max-width:68px;line-height:1.35;font-weight:500}
+
+/* ── Section blocks ── */
+.sec{border-top:1px solid #f3f4f6}
+/* HOTH-style solid red/colored section headers */
+.sec-hdr{
+  padding:14px 24px;display:flex;align-items:center;gap:12px;
+  color:#fff;position:relative;
+}
+.sec-hdr.red{background:#e8453c}
+.sec-hdr.dark{background:#2d3748}
+.sec-hdr.blue{background:#2563eb}
+.sec-hdr.green{background:#059669}
+.sec-hdr.purple{background:#7c3aed}
+.sec-hdr.teal{background:#0891b2}
+.sec-hdr.orange{background:#d97706}
+.sec-hdr-title{color:#fff;font-size:14px;font-weight:700;letter-spacing:-.01em;flex:1}
+
+/* Section intro — grade + text side by side */
+.sec-intro{
+  display:flex;align-items:flex-start;gap:20px;
+  padding:20px 24px;
+  background:#fff;border-bottom:1px solid #f3f4f6;
+}
+.sec-intro-txt h3{font-size:15px;font-weight:600;margin-bottom:4px;color:#111827}
+.sec-intro-txt p{font-size:12px;color:#6b7280;line-height:1.65}
+.sec-body{padding:0 24px}
+
+/* ── Check rows ── */
+.crow{
+  padding:14px 0;border-bottom:1px solid #f9fafb;
+}
+.crow:last-child{border-bottom:none}
+.crow:hover{background:#fafafa;margin:0 -24px;padding:14px 24px}
+.crow-hdr{display:flex;align-items:flex-start;gap:10px}
+
+/* HOTH-style status icons — colored circles */
+.cicon{
+  width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;flex-shrink:0;margin-top:1px;
+  font-family:var(--font);
+}
+.ci-p{background:#16a34a;color:#fff}
+.ci-f{background:#dc2626;color:#fff}
+.ci-w{background:#d97706;color:#fff}
+.ci-i{background:#2563eb;color:#fff}
+
+.crow-title{font-size:13px;font-weight:600;flex:1;color:#111827;line-height:1.4}
+/* Expandable explanation box — HOTH blue-grey */
+.crow-body{
+  margin:10px 0 0 32px;
+  background:#f0f7ff;
+  border-radius:6px;
+  padding:11px 14px;
+  font-size:12px;color:#1e3a5f;line-height:1.7;
+  border-left:none;
+}
+.crow-val{
+  margin:7px 0 0 32px;
+  font-size:12px;
+  background:#f9fafb;
+  border:1px solid #e5e7eb;
+  border-radius:6px;
+  padding:6px 12px;
+  font-family:monospace;
+  word-break:break-all;color:#111827;
+  display:inline-block;
+}
+
+/* ── SERP Preview ── HOTH style ── */
+.serp-box{
+  border:1px solid #e5e7eb;border-radius:8px;
+  padding:14px 16px;margin:10px 0 0 32px;
+  background:#fff;
+}
+.serp-url{font-size:11px;color:#16a34a;margin-bottom:3px;font-family:monospace;display:flex;align-items:center;gap:6px}
+.serp-title{font-size:16px;color:#1a0dab;line-height:1.3;margin-bottom:5px;font-weight:400}
+.serp-desc{font-size:12.5px;color:#4d5156;line-height:1.55}
+
+/* ── Gauge cards — HOTH speedometer style ── */
+.gauge-row{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0 0 32px}
+.gauge{
+  flex:1;min-width:100px;
+  background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;
+  padding:14px 12px;text-align:center;
+}
+.gauge-val{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.gauge-lbl{font-size:10px;color:#6b7280;margin-top:5px;line-height:1.4;font-weight:500}
+.gauge-tgt{font-size:9px;color:#9ca3af;margin-top:2px}
+.gv-g{color:#16a34a}.gv-w{color:#d97706}.gv-b{color:#dc2626}
+
+/* ── Speedometer gauge (HOTH style) ── */
+.speed-gauges{display:flex;gap:28px;flex-wrap:wrap;margin:14px 0 0 32px;align-items:flex-end}
+.spd-gauge{text-align:center;position:relative}
+.spd-gauge svg{display:block;margin:0 auto}
+.spd-gauge-val{font-size:22px;font-weight:700;color:#111827;margin-top:4px}
+.spd-gauge-lbl{font-size:10.5px;color:#6b7280;margin-top:2px}
+
+/* ── Tables ── */
+.rtbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.rtbl th{
+  background:#f9fafb;padding:8px 12px;text-align:left;
+  font-size:9.5px;text-transform:uppercase;letter-spacing:.07em;
+  color:#9ca3af;border-bottom:1px solid #e5e7eb;font-weight:700;
+}
+.rtbl td{padding:9px 12px;border-bottom:1px solid #f3f4f6;color:#374151}
+.rtbl tr:last-child td{border-bottom:none}
+.rtbl tbody tr:hover td{background:#f9fafb}
+.pb-g{display:inline-block;background:#dcfce7;color:#16a34a;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700}
+.pb-w{display:inline-block;background:#fef3c7;color:#d97706;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700}
+.pb-r{display:inline-block;background:#fee2e2;color:#dc2626;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700}
+
+/* ── Metric cards ── */
+.mgrid{display:grid;gap:12px;margin:14px 0 0 32px}
+.mcard{
+  background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;
+  padding:16px;text-align:center;
+}
+.mval{font-size:28px;font-weight:700;color:#111827;letter-spacing:-.02em}
+.mv-g{color:#16a34a}.mv-w{color:#d97706}.mv-b{color:#dc2626}
+.mlbl{font-size:9.5px;color:#9ca3af;margin-top:5px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+
+/* ── Size bars ── */
+.sbar{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.sbar-l{width:70px;font-size:12px;color:#6b7280;font-weight:500}
+.sbar-tr{flex:1;background:#f3f4f6;border-radius:4px;height:7px;overflow:hidden}
+.sbar-fi{height:100%;border-radius:4px}
+.sbar-v{width:60px;text-align:right;font-size:11.5px;color:#6b7280;font-weight:600}
+
+/* ── Compression ── */
+.ctbl{width:100%;font-size:12px;border-collapse:collapse}
+.ctbl td{padding:5px 2px;vertical-align:middle}
+.cbar-wrap{display:flex;align-items:center;gap:8px}
+.cbar-tr{flex:1;background:#f3f4f6;border-radius:3px;height:5px;overflow:hidden}
+.cbar-fi{height:100%;border-radius:3px}
+
+/* ── Tech tags ── */
+.tech-wrap{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 0 32px}
+.ttech{
+  background:#f9fafb;border:1px solid #e5e7eb;border-radius:20px;
+  padding:4px 14px;font-size:11.5px;color:#6b7280;font-weight:500;
+}
+
+/* ── Social rows ── HOTH card style ── */
+.soc-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f3f4f6}
+.soc-row:last-child{border-bottom:none}
+.soc-ic{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;color:#fff}
+.soc-name{font-size:12.5px;font-weight:600;color:#111827}
+.soc-url{font-size:11px;color:#9ca3af;margin-top:1px}
+.soc-stat{font-size:11px;font-weight:600;margin-top:2px}
+
+/* ── Stars ── */
+.stars{color:#f59e0b;font-size:20px;letter-spacing:2px}
+
+/* ── Review bars ── */
+.rbar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.rbar-lbl{width:14px;font-size:11px;color:#6b7280;text-align:right;font-weight:600}
+.rbar-tr{flex:1;background:#f3f4f6;border-radius:3px;height:8px;overflow:hidden}
+.rbar-fi{height:100%;background:#3b82f6;border-radius:3px}
+.rbar-n{width:28px;font-size:11px;color:#9ca3af}
+
+/* ── PSI score circle ── */
+.psi-c{width:70px;height:70px;border-radius:50%;border:5px solid;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* ── Device screenshots ── */
+.device-wrap{display:flex;gap:20px;flex-wrap:wrap;margin:14px 0 0 32px;align-items:flex-start}
+.device-frame{border-radius:8px;overflow:hidden;border:2px solid #e5e7eb;background:#f9fafb;flex-shrink:0}
+.device-bar{background:#e5e7eb;padding:5px 10px;font-size:9px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px}
+.device-bar::before{content:'';width:6px;height:6px;border-radius:50%;background:#16a34a;display:inline-block}
+.device-screen{height:160px;overflow:hidden;position:relative;width:100%;background:#fff}
+.device-screen iframe{width:200%;height:200%;transform:scale(.5);transform-origin:0 0;pointer-events:none;border:none}
+
+/* ── Recommendations ── HOTH numbered style ── */
+.rec-item{
+  display:flex;gap:0;margin-bottom:10px;
+  border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;
+}
+.rec-num{
+  width:44px;min-height:60px;
+  background:#e8453c;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:18px;font-weight:700;flex-shrink:0;
+}
+.rec-body{padding:12px 16px;flex:1}
+.rec-title{font-size:13px;font-weight:700;color:#111827;margin-bottom:6px}
+.rec-detail{font-size:12.5px;color:#374151;line-height:1.7}
+
+/* ── Footer ── */
+.rpt-footer{
+  background:#f9fafb;border-top:1px solid #e5e7eb;
+  padding:16px 24px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
+}
+.rft-l{font-size:11.5px;color:#6b7280}
+.rft-l strong{color:#e8453c;font-weight:600}
+.bottom-bar{display:flex;gap:10px;margin-top:16px}
+.bottom-bar .btn-p{flex:1;justify-content:center;padding:13px;font-size:13px}
+
+/* ── GBP card ── */
+.gbp-card{
+  margin:12px 0 0 32px;background:#f9fafb;
+  border:1px solid #e5e7eb;border-radius:8px;
+  padding:14px 18px;font-size:12.5px;
+}
+
+/* ── Print ── */
+@media print{
+  body,#page-report{background:#fff!important;padding:0!important}
+  .toolbar,.bottom-bar{display:none!important}
+  .rpt-wrap{max-width:100%}
+  #rpt{box-shadow:none!important;border-radius:0!important;border:none!important}
+  .sec,.crow{page-break-inside:avoid}
+  .sec-hdr{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  .rpt-hdr{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  .ci-p,.ci-f,.ci-w,.ci-i{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  .rec-num{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  @page{margin:14mm;size:A4}
+}
+/* ── Print ── */
+@media print{
+  body,#page-report{background:#fff!important;padding:0!important}
+  .toolbar,.bottom-bar{display:none!important}
+  .rpt-wrap{max-width:100%}
+  #rpt{box-shadow:none!important;border-radius:0!important;border:none!important}
+  .sec,.crow{page-break-inside:avoid}
+  .rpt-footer{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  .ci-p,.ci-f,.ci-w,.ci-i,.cicon{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  @page{margin:14mm;size:A4}
+}
+
+/* ── EMAIL MODAL ── */
+#email-modal-overlay{
+  display:none;position:fixed;inset:0;z-index:9999;
+  background:rgba(0,0,0,.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  align-items:center;justify-content:center;padding:20px;
+}
+#email-modal-overlay.open{display:flex}
+#email-modal{
+  background:#0d1425;border:1px solid rgba(255,255,255,.1);
+  border-radius:20px;padding:36px 32px;width:100%;max-width:440px;
+  box-shadow:0 24px 64px rgba(0,0,0,.6);
+  animation:em-in .35s cubic-bezier(.16,1,.3,1) both;
+  position:relative;
+}
+@keyframes em-in{from{opacity:0;transform:scale(.92) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.em-icon{font-size:44px;margin-bottom:14px;text-align:center}
+.em-title{font-size:19px;font-weight:700;color:#f0f4ff;margin-bottom:6px;text-align:center}
+.em-sub{font-size:13px;color:#8b9ab5;line-height:1.65;text-align:center;margin-bottom:22px}
+.em-label{display:block;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8b9ab5;margin-bottom:5px}
+.em-input{
+  width:100%;padding:12px 14px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:10px;font-family:'Sora',sans-serif;font-size:13.5px;
+  color:#fff;outline:none;
+  transition:border-color .2s,box-shadow .2s,background .2s;
+  margin-bottom:6px;
+}
+.em-input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.3);background:rgba(59,130,246,.06)}
+.em-input.em-err-inp{border-color:#ef4444}
+.em-errmsg{font-size:11.5px;color:#f87171;margin-bottom:12px;display:none;min-height:16px}
+.em-btn-send{
+  width:100%;border:none;border-radius:10px;padding:13px;
+  font-family:'Sora',sans-serif;font-size:14px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  cursor:pointer;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,#3b82f6,#06b6d4);
+  color:#fff;box-shadow:0 4px 20px rgba(59,130,246,.35);
+  transition:transform .15s,box-shadow .15s;margin-bottom:10px;
+}
+.em-btn-send::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.12),transparent);pointer-events:none}
+.em-btn-send:hover{transform:translateY(-1px);box-shadow:0 6px 28px rgba(59,130,246,.45)}
+.em-btn-send:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.em-btn-skip{
+  width:100%;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:11px;
+  font-family:'Sora',sans-serif;font-size:13px;font-weight:500;
+  background:transparent;color:#8b9ab5;cursor:pointer;
+  transition:background .15s,color .15s;
+}
+.em-btn-skip:hover{background:rgba(255,255,255,.06);color:#f0f4ff}
+.em-success{display:none;text-align:center;padding:10px 0}
+.em-success-icon{font-size:40px;margin-bottom:10px}
+.em-success-title{font-size:16px;font-weight:700;color:#f0f4ff;margin-bottom:6px}
+.em-success-sub{font-size:12.5px;color:#8b9ab5;line-height:1.6;margin-bottom:18px}
+.em-close{
+  position:absolute;top:14px;right:16px;
+  background:rgba(255,255,255,.08);border:none;border-radius:50%;
+  width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+  color:#8b9ab5;font-size:16px;cursor:pointer;transition:background .15s;
+}
+.em-close:hover{background:rgba(255,255,255,.15);color:#f0f4ff}
+</style>
+</head>
+<body>
+
+<!-- ══ EMAIL MODAL ══ -->
+<div id="email-modal-overlay">
+  <div id="email-modal">
+    <button class="em-close" id="em-close" title="Close">✕</button>
+
+    <!-- Step 1: ask for email -->
+    <div id="em-form-section">
+      <div class="em-icon">📊</div>
+      <div class="em-title">Your Report is Ready!</div>
+      <div class="em-sub">Enter your email to receive this report in your inbox — we'll also open it in a new window instantly.</div>
+      <label class="em-label" for="em-email-inp">Email Address</label>
+      <input type="email" id="em-email-inp" class="em-input" placeholder="you@example.com" autocomplete="email"/>
+      <div class="em-errmsg" id="em-errmsg">Please enter a valid email address.</div>
+      <button class="em-btn-send" id="em-btn-send">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Send Report to Email &amp; Open
+      </button>
+      <button class="em-btn-skip" id="em-btn-skip">Skip — just open report</button>
+    </div>
+
+    <!-- Step 2: sending state -->
+    <div id="em-sending-section" style="display:none;text-align:center;padding:20px 0">
+      <div style="width:48px;height:48px;border:3px solid rgba(255,255,255,.08);border-top-color:#3b82f6;border-radius:50%;animation:em-spin .8s linear infinite;margin:0 auto 18px"></div>
+      <div style="font-size:15px;font-weight:600;color:#f0f4ff;margin-bottom:6px">Sending your report...</div>
+      <div style="font-size:12.5px;color:#8b9ab5">Opening report in new window too</div>
+      <style>@keyframes em-spin{to{transform:rotate(360deg)}}</style>
+    </div>
+
+    <!-- Step 3: success -->
+    <div class="em-success" id="em-success-section">
+      <div class="em-success-icon">✅</div>
+      <div class="em-success-title">Report Sent!</div>
+      <div class="em-success-sub" id="em-success-msg">Your SEO report has been sent to your email.<br>Check your inbox (and spam folder just in case).</div>
+      <button class="em-btn-skip" id="em-btn-close-success">Close</button>
+    </div>
+  </div>
+</div>
+<div id="page-form">
+  <div class="hero-top">
+    <h1 class="hero-headline">Analyse your website <span class="accent">instantly</span></h1>
+    <p class="hero-sub">Enter any URL below and get a comprehensive SEO report covering over 200 ranking signals absolutely free.</p>
+  </div>
+  <div class="form-card">
+    <div class="fgroup">
+      <label class="flabel">Website URL</label>
+      <input type="url" id="f-url" placeholder="https://yourwebsite.com" autocomplete="url"/>
+      <div class="errmsg" id="e-url">Enter a valid URL starting with https://</div>
+    </div>
+    <div class="frow">
+      <div class="fgroup">
+        <label class="flabel">Your Name</label>
+        <input type="text" id="f-name" placeholder="Your name"/>
+        <div class="errmsg" id="e-name">Name is required</div>
+      </div>
+      <div class="fgroup">
+        <label class="flabel">Email Address</label>
+        <input type="email" id="f-email" placeholder="you@company.com"/>
+        <div class="errmsg" id="e-email">Enter a valid email</div>
+      </div>
+    </div>
+    <button class="btn-run" id="btn-start">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      Run Free SEO Audit
+    </button>
+    <div class="feats">
+      <div class="feat"><span class="ck">✓</span> On-Page SEO</div>
+      <div class="feat"><span class="ck">✓</span> GEO / AI Visibility</div>
+      <div class="feat"><span class="ck">✓</span> Core Web Vitals</div>
+      <div class="feat"><span class="ck">✓</span> Social Profiles</div>
+      <div class="feat"><span class="ck">✓</span> Local SEO + GBP</div>
+      <div class="feat"><span class="ck">✓</span> PDF Export</div>
+    </div>
+  </div>
+  <div class="trust-bar">
+    <div class="trust-item"><span class="tck">✓</span> No registration required</div>
+    <div class="trust-item"><span class="tck">✓</span> Scans 200+ SEO signals</div>
+    <div class="trust-item"><span class="tck">✓</span> Instant downloadable report</div>
+    <div class="trust-item"><span class="tck">✓</span> Mobile &amp; desktop check</div>
+    <div class="trust-item"><span class="tck">✓</span> Core Web Vitals included</div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="page-loading" class="hidden">
+<div class="load-card">
+  <div class="spin-wrap">
+    <div class="spin-outer"></div>
+    <div class="spin-inner"></div>
+    <div class="spin-dot"></div>
+  </div>
+  <div class="l-domain" id="l-dom">Analysing website...</div>
+  <div class="l-step" id="l-step">Initialising AI audit engine...</div>
+  <div class="pbar-wrap"><div class="pbar-fill" id="pbar" style="width:0%"></div></div>
+  <div class="pbar-pct" id="l-pct">0% complete</div>
+  <div class="steps-log" id="l-log"></div>
+</div>
+</div>
+
+<!-- ERROR -->
+<div id="page-error" class="hidden">
+<div class="err-card">
+  <div class="err-icon">⚠️</div>
+  <div class="err-title">Audit Could Not Complete</div>
+  <div class="err-msg" id="err-msg">There was an issue. Please try again.</div>
+  <button class="btn-retry" id="btn-retry">Try Again</button>
+</div>
+</div>
+
+<!-- REPORT -->
+<div id="page-report" class="hidden">
+<div class="rpt-wrap">
+  <div class="toolbar">
+    <div class="toolbar-info">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <span id="tb-url"></span>
+    </div>
+    <div class="tbtns">
+      <button class="btn-p" id="btn-print">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print / PDF
+      </button>
+      <button class="btn-g" id="btn-new">↩ New Audit</button>
+    </div>
+  </div>
+
+  <div id="rpt">
+    <!-- Header — HOTH style -->
+    <div class="rpt-hdr">
+      <div class="rpt-hdr-top">
+        <div>
+          <h2 id="r-title" style="font-size:22px;margin-bottom:6px">Website Report</h2>
+          <div class="rpt-hdr-sub" id="r-sub"></div>
+        </div>
+        <div class="hdr-brand">
+          <div style="font-weight:700;font-size:13px;opacity:.9">SEO Audit Tool</div>
+          <div id="r-date" style="opacity:.65;font-size:11px"></div>
+        </div>
+      </div>
+      <div class="rpt-hdr-desc" id="r-desc" style="margin-top:10px"></div>
+    </div>
+
+    <!-- Summary -->
+    <div class="summary">
+      <div class="sum-left">
+        <div class="ov-lbl">Overall Score</div>
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <circle cx="70" cy="70" r="62" fill="none" stroke="#e5e7eb" stroke-width="9"/>
+          <circle id="ov-arc" cx="70" cy="70" r="62" fill="none" stroke-width="9" stroke-linecap="round" transform="rotate(-90 70 70)" stroke-dasharray="390" stroke-dashoffset="200"/>
+          <text id="ov-g" x="70" y="76" text-anchor="middle" font-family="Sora,sans-serif" font-size="30" font-weight="700" fill="#1e8449">—</text>
+        </svg>
+        <div class="ov-lbl" id="ov-lbl" style="font-size:12px;font-weight:600;margin-top:2px">—</div>
+      </div>
+      <div class="sum-right">
+        <div class="sum-rt-title">Category Breakdown</div>
+        <div class="cat-grades" id="cat-grades"></div>
+        <canvas id="radar" width="230" height="165" style="max-width:100%"></canvas>
+      </div>
+    </div>
+
+    <!-- ── ON-PAGE SEO ── -->
+    <div class="sec">
+      <div class="sec-hdr red"><div id="cg-op"></div><div class="sec-hdr-title">On-Page SEO Results</div></div>
+      <div class="sec-intro"><div id="si-op"></div>
+        <div class="sec-intro-txt"><h3 id="op-h">On-Page SEO Analysis</h3><p id="op-p">Analysing title tags, meta descriptions, headings, keywords, and content.</p></div>
+      </div>
+      <div class="sec-body" style="padding:0 24px">
+        <!-- SERP Preview -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-i">i</div><div class="crow-title">SERP Snippet Preview</div></div>
+          <div class="crow-body" style="background:transparent;border:none;padding-left:0;font-size:12px;color:var(--sub)">This illustrates how your page may appear in Google Search Results.</div>
+          <div class="serp-box"><div class="serp-url" id="serp-url"></div><div class="serp-title" id="serp-title"></div><div class="serp-desc" id="serp-desc"></div></div>
+        </div>
+        <!-- Title Tag -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-tt">!</div><div class="crow-title">Title Tag — <span id="tt-st"></span></div></div>
+          <div class="crow-val" id="tt-val"></div><div class="crow-body" id="tt-body"></div></div>
+        <!-- Meta Description -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-meta">✓</div><div class="crow-title">Meta Description — <span id="meta-st"></span></div></div>
+          <div class="crow-val" id="meta-val"></div><div class="crow-body" id="meta-body"></div></div>
+        <!-- Hreflang -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-hreflang">i</div><div class="crow-title">Hreflang Usage — <span id="hreflang-st"></span></div></div>
+          <div class="crow-body" id="hreflang-body"></div></div>
+        <!-- Language -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-lang">✓</div><div class="crow-title">Language — <span id="lang-st"></span></div></div>
+          <div class="crow-val" id="lang-v"></div></div>
+        <!-- H1 -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-h1">✓</div><div class="crow-title">H1 Header Tag — <span id="h1-st"></span></div></div>
+          <div style="margin:10px 0 0 28px"><table class="rtbl"><thead><tr><th>Tag</th><th>Content</th></tr></thead><tbody id="h1-body"></tbody></table></div></div>
+        <!-- H2-H6 -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-p">✓</div><div class="crow-title">H2–H6 Header Tags — multiple levels in use</div></div>
+          <div style="margin:10px 0 0 28px;display:flex;gap:10px;flex-wrap:wrap" id="hfreq-grid"></div></div>
+        <!-- Keywords -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-p">✓</div><div class="crow-title">Keyword Consistency</div></div>
+          <div style="margin:10px 0 0 28px"><table class="rtbl"><thead><tr><th>Keyword / Phrase</th><th>Title</th><th>Meta</th><th>Headings</th><th>Page Freq.</th></tr></thead><tbody id="kw-body"></tbody></table></div></div>
+        <!-- Word Count -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-wc">✓</div><div class="crow-title">Amount of Content — <span id="wc-st"></span></div></div>
+          <div class="crow-body" id="wc-body"></div></div>
+        <!-- Image Alt -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-alt">✓</div><div class="crow-title">Image Alt Attributes — <span id="alt-st"></span></div></div>
+          <div class="crow-body" id="alt-body"></div></div>
+        <!-- Canonical -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-canon">✓</div><div class="crow-title">Canonical Tag — <span id="canon-st"></span></div></div><div class="crow-val" id="canon-v"></div></div>
+        <!-- Noindex -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-noindex">✓</div><div class="crow-title">Noindex Tag Test — <span id="noindex-st"></span></div></div>
+          <div class="crow-body" id="noindex-body"></div></div>
+        <!-- HTTPS Redirect -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-https">✓</div><div class="crow-title">HTTPS Redirect — <span id="https-st"></span></div></div>
+          <div class="crow-body" id="https-body"></div></div>
+        <!-- Robots -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-robots">✓</div><div class="crow-title">Robots.txt — <span id="robots-st"></span></div></div><div class="crow-val" id="robots-v"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-robblock">✓</div><div class="crow-title">Blocked by Robots.txt — <span id="robblock-st"></span></div></div></div>
+        <!-- Sitemap -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-sitemap">✓</div><div class="crow-title">XML Sitemap — <span id="sitemap-st"></span></div></div><div class="crow-val" id="sitemap-v"></div></div>
+        <!-- Analytics -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-analytics">✓</div><div class="crow-title">Analytics — <span id="analytics-st"></span></div></div>
+          <div class="crow-val" id="analytics-v"></div></div>
+        <!-- Schema -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-schema">✓</div><div class="crow-title">Schema.org Structured Data — <span id="schema-st"></span></div></div>
+          <div class="crow-body" id="schema-body"></div></div>
+        <!-- Flash / AMP -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-p">✓</div><div class="crow-title">Flash — no Flash content detected</div></div></div>
+        <div class="crow" style="border-bottom:none"><div class="crow-hdr"><div class="cicon ci-i">i</div><div class="crow-title">AMP — <span id="amp-st"></span></div></div>
+          <div class="crow-body" id="amp-body"></div></div>
+      </div>
+    </div>
+
+    <!-- ── GEO / AI ── -->
+    <div class="sec">
+      <div class="sec-hdr green"><div id="cg-geo"></div><div class="sec-hdr-title">Generative Engine Optimization (GEO)</div></div>
+      <div class="sec-intro"><div id="si-geo"></div>
+        <div class="sec-intro-txt"><h3 id="geo-h">GEO / AI Visibility</h3><p id="geo-p">Evaluating how well LLMs and AI search engines can crawl and understand your content.</p></div>
+      </div>
+      <div class="sec-body" style="padding:0 24px">
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-render">✓</div><div class="crow-title">Rendered Content (LLM Readability) — <span id="render-st"></span></div></div>
+          <div class="crow-body" id="render-body"></div>
+          <div style="margin:10px 0 0 28px;display:inline-block;background:#f8f9fb;border:1px solid var(--border);border-radius:var(--r);padding:10px 18px;font-size:13px">
+            Rendering Percentage: <strong id="render-pct">—</strong>
+          </div>
+        </div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-llms">✓</div><div class="crow-title">llms.txt — <span id="llms-st"></span></div></div>
+          <div class="crow-val" id="llms-url"></div><div class="crow-body" id="llms-body"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-i">i</div><div class="crow-title">Traffic From Search Rankings</div></div>
+          <div class="mgrid" style="grid-template-columns:repeat(3,1fr)" id="traffic-grid"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-i">i</div><div class="crow-title">Top Organic Keyword Rankings</div></div>
+          <div style="margin:10px 0 0 28px"><table class="rtbl"><thead><tr><th>Keyword</th><th>Country</th><th>Position</th><th>Searches/mo</th><th>Est. Traffic</th></tr></thead><tbody id="kw-rank"></tbody></table></div></div>
+        <div class="crow" style="border-bottom:none"><div class="crow-hdr"><div class="cicon ci-i">i</div><div class="crow-title">Organic Keyword Positions</div></div>
+          <div style="margin:10px 0 0 28px"><table class="rtbl"><thead><tr><th>Position Range</th><th>Keywords</th></tr></thead><tbody id="kw-pos"></tbody></table></div></div>
+      </div>
+    </div>
+
+    <!-- ── USABILITY ── -->
+    <div class="sec">
+      <div class="sec-hdr red"><div id="cg-us"></div><div class="sec-hdr-title">Usability</div></div>
+      <div class="sec-intro"><div id="si-us"></div>
+        <div class="sec-intro-txt"><h3 id="us-h">Usability Analysis</h3><p id="us-p">Usability issues affect bounce rates — which indirectly impact search rankings.</p></div>
+      </div>
+      <div class="sec-body" style="padding:0 24px">
+        <!-- CWV -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-cwv">!</div><div class="crow-title">Google Core Web Vitals — <span id="cwv-st"></span></div></div>
+          <div class="crow-body" id="cwv-adv"></div>
+          <div id="cwv-src" style="padding:0 0 6px 28px"></div>
+          <div class="gauge-row">
+            <div class="gauge"><div class="gauge-val" id="cwv-lcp">—</div><div class="gauge-lbl">Largest Contentful Paint</div><div class="gauge-tgt">Target ≤ 2.5s</div><div id="cwv-lcp-r"></div></div>
+            <div class="gauge"><div class="gauge-val" id="cwv-inp">—</div><div class="gauge-lbl">Interaction to Next Paint</div><div class="gauge-tgt">Target ≤ 200ms</div><div id="cwv-inp-r"></div></div>
+            <div class="gauge"><div class="gauge-val" id="cwv-cls">—</div><div class="gauge-lbl">Cumulative Layout Shift</div><div class="gauge-tgt">Target ≤ 0.1</div><div id="cwv-cls-r"></div></div>
+            <div class="gauge"><div class="gauge-val" id="cwv-fcp" style="font-size:18px">—</div><div class="gauge-lbl">First Contentful Paint</div><div class="gauge-tgt">Target ≤ 1.8s</div></div>
+            <div class="gauge"><div class="gauge-val" id="cwv-ttfb" style="font-size:18px">—</div><div class="gauge-lbl">Time to First Byte</div><div class="gauge-tgt">Target ≤ 800ms</div></div>
+          </div>
+        </div>
+        <!-- Mobile PSI -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-mob">!</div><div class="crow-title">Google PageSpeed — Mobile — <span id="mob-lbl" style="color:var(--fail)"></span></div></div>
+          <div style="margin:12px 0 0 28px;display:flex;align-items:flex-start;gap:15px;flex-wrap:wrap">
+            <div class="psi-c" id="mob-circle"><span style="font-size:21px;font-weight:700" id="mob-score">—</span></div>
+            <div style="flex:1;min-width:190px">
+              <table class="rtbl"><thead><tr><th>Lab Data</th><th>Value</th></tr></thead><tbody id="mob-tbl"></tbody></table>
+              <div style="margin-top:11px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--lite);margin-bottom:5px">Opportunities to Improve</div>
+              <table class="rtbl"><thead><tr><th>Opportunity</th><th>Est. Savings</th></tr></thead><tbody id="mob-opp"></tbody></table>
+            </div>
+          </div>
+        </div>
+        <!-- Desktop PSI -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-desk">!</div><div class="crow-title">Google PageSpeed — Desktop — <span id="desk-lbl" style="color:var(--warn)"></span></div></div>
+          <div style="margin:12px 0 0 28px;display:flex;align-items:flex-start;gap:15px;flex-wrap:wrap">
+            <div class="psi-c" id="desk-circle"><span style="font-size:21px;font-weight:700" id="desk-score">—</span></div>
+            <div style="flex:1;min-width:190px">
+              <table class="rtbl"><thead><tr><th>Lab Data</th><th>Value</th></tr></thead><tbody id="desk-tbl"></tbody></table>
+              <div style="margin-top:11px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--lite);margin-bottom:5px">Opportunities</div>
+              <table class="rtbl"><thead><tr><th>Opportunity</th><th>Est. Savings</th></tr></thead><tbody id="desk-opp"></tbody></table>
+            </div>
+          </div>
+        </div>
+        <!-- Device Rendering Preview — HOTH style -->
+        <div class="crow" id="device-row">
+          <div class="crow-hdr"><div class="cicon ci-i">i</div><div class="crow-title">Device Rendering — how your page appears on different devices</div></div>
+          <div class="crow-body" style="background:#f9fafb;border-left:none;border:1px solid #e5e7eb">
+            Screenshots load your live site in scaled frames. This illustrates how your page renders on mobile and desktop.
+          </div>
+          <div class="device-wrap" id="device-wrap">
+            <!-- Mobile frame -->
+            <div>
+              <div style="font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:flex;align-items:center;gap:6px">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+                Mobile
+              </div>
+              <!-- Phone frame -->
+              <div style="position:relative;width:140px">
+                <div style="background:#1f2937;border-radius:20px;padding:8px 5px;box-shadow:0 8px 24px rgba(0,0,0,.2)">
+                  <div style="background:#111;border-radius:14px;overflow:hidden;height:240px;position:relative">
+                    <div style="background:#1f2937;height:16px;display:flex;align-items:center;justify-content:center">
+                      <div style="width:40px;height:4px;background:#374151;border-radius:2px"></div>
+                    </div>
+                    <div style="height:224px;overflow:hidden;position:relative;background:#f9fafb" id="mob-screen">
+                      <div style="height:100%;display:flex;align-items:center;justify-content:center"><div style="font-size:10px;color:#d1d5db">Loading...</div></div>
+                    </div>
+                  </div>
+                </div>
+                <div style="font-size:10px;color:#9ca3af;text-align:center;margin-top:6px">390px × 844px</div>
+              </div>
+            </div>
+            <!-- Tablet frame -->
+            <div>
+              <div style="font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:flex;align-items:center;gap:6px">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                Tablet
+              </div>
+              <div style="background:#1f2937;border-radius:14px;padding:7px 5px;box-shadow:0 8px 24px rgba(0,0,0,.2);width:210px">
+                <div style="background:#111;border-radius:10px;overflow:hidden;height:280px;position:relative">
+                  <div style="height:280px;overflow:hidden;background:#fff" id="tab-screen">
+                    <iframe id="tab-iframe" style="width:768px;height:1024px;transform:scale(0.27);transform-origin:0 0;pointer-events:none;border:none" loading="lazy" title="Tablet preview"></iframe>
+                  </div>
+                </div>
+                <div style="font-size:10px;color:#9ca3af;text-align:center;margin-top:6px">768px × 1024px</div>
+              </div>
+            </div>
+            <!-- Desktop frame -->
+            <div style="flex:1;min-width:240px">
+              <div style="font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:flex;align-items:center;gap:6px">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                Desktop
+              </div>
+              <div style="background:#1f2937;border-radius:10px;padding:6px 6px 4px;box-shadow:0 8px 24px rgba(0,0,0,.2)">
+                <!-- Browser chrome -->
+                <div style="background:#374151;border-radius:6px 6px 0 0;padding:5px 8px;display:flex;align-items:center;gap:5px;margin-bottom:2px">
+                  <div style="display:flex;gap:3px">
+                    <div style="width:7px;height:7px;border-radius:50%;background:#ef4444"></div>
+                    <div style="width:7px;height:7px;border-radius:50%;background:#f59e0b"></div>
+                    <div style="width:7px;height:7px;border-radius:50%;background:#10b981"></div>
+                  </div>
+                  <div id="desk-url-bar" style="flex:1;background:#1f2937;border-radius:3px;padding:2px 7px;font-size:8.5px;color:#9ca3af;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+                </div>
+                <div style="height:220px;overflow:hidden;background:#f9fafb;border-radius:0 0 4px 4px" id="desk-screen">
+                    <div style="height:100%;display:flex;align-items:center;justify-content:center"><div style="font-size:10px;color:#d1d5db">Loading...</div></div>
+                </div>
+              </div>
+              <div style="font-size:10px;color:#9ca3af;text-align:center;margin-top:6px">1280px × 800px</div>
+            </div>
+          </div>
+        </div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-p">✓</div><div class="crow-title">Mobile Viewport — <span id="viewport-st"></span></div></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-iframe">!</div><div class="crow-title">iFrames — <span id="iframe-st"></span></div></div>
+          <div class="crow-body" id="iframe-body"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-p">✓</div><div class="crow-title">Legible Font Sizes — <span id="font-st"></span></div></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-p">✓</div><div class="crow-title">Tap Target Sizing — <span id="tap-st"></span></div></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-fav">✓</div><div class="crow-title">Favicon — <span id="fav-st"></span></div></div></div>
+        <div class="crow" style="border-bottom:none"><div class="crow-hdr"><div class="cicon" id="ci-email">✓</div><div class="crow-title">Email Privacy — <span id="email-st"></span></div></div></div>
+      </div>
+    </div>
+
+    <!-- ── PERFORMANCE ── -->
+    <div class="sec">
+      <div class="sec-hdr blue"><div id="cg-pf"></div><div class="sec-hdr-title">Performance Results</div></div>
+      <div class="sec-intro"><div id="si-pf"></div>
+        <div class="sec-intro-txt"><h3 id="pf-h">Performance Analysis</h3><p id="pf-p">Page speed, download size, compression, and resource loading.</p></div>
+      </div>
+      <div class="sec-body" style="padding:0 24px">
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-spd">✓</div><div class="crow-title">Website Load Speed — <span id="spd-st"></span></div></div>
+          <div class="gauge-row">
+            <div class="gauge"><div class="gauge-val gv-g" id="sp-srv">—</div><div class="gauge-lbl">Server Response</div></div>
+            <div class="gauge"><div class="gauge-val gv-w" id="sp-cnt">—</div><div class="gauge-lbl">Content Loaded</div></div>
+            <div class="gauge"><div class="gauge-val gv-w" id="sp-scr">—</div><div class="gauge-lbl">Scripts Complete</div></div>
+          </div>
+        </div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-sz">✓</div><div class="crow-title">Website Download Size — <span id="sz-st"></span></div></div>
+          <div style="margin:12px 0 0 28px">
+            <div style="display:flex;align-items:center;gap:11px;margin-bottom:13px">
+              <div style="width:58px;height:58px;border-radius:50%;border:4px solid var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-size:12px;font-weight:600;color:var(--green)" id="sz-tot">—</span></div>
+              <span style="font-size:12.5px;color:#6b7280">Total download size</span>
+            </div>
+            <div id="sz-bars"></div>
+          </div>
+        </div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-comp">✓</div><div class="crow-title">Compression (Gzip / Brotli) — <span id="comp-st"></span></div></div>
+          <div style="margin:12px 0 0 28px">
+            <div style="display:flex;align-items:center;gap:11px;margin-bottom:11px">
+              <div style="width:52px;height:52px;border-radius:50%;border:4px solid var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-size:12px;font-weight:600;color:var(--green)" id="comp-r">—</span></div>
+              <span style="font-size:12.5px;color:#6b7280">Overall compression rate</span>
+            </div>
+            <table class="ctbl" id="comp-tbl"></table>
+          </div>
+        </div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-http2">✓</div><div class="crow-title">HTTP/2 — <span id="http2-st"></span></div></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-imgopt">✓</div><div class="crow-title">Optimise Images — <span id="imgopt-st"></span></div></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-minify">!</div><div class="crow-title">Minification — <span id="minify-st"></span></div></div>
+          <div class="crow-body" id="minify-body"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-jserr">✕</div><div class="crow-title">JavaScript Errors — <span id="jserr-st"></span></div></div>
+          <div class="crow-val" id="js-err"></div>
+          <div class="crow-body" id="jserr-body"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-inline">!</div><div class="crow-title">Inline Styles — <span id="inline-st"></span></div></div>
+          <div class="crow-body" id="inline-body"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-p">✓</div><div class="crow-title">Deprecated HTML — <span id="dep-st"></span></div></div></div>
+        <div class="crow" style="border-bottom:none"><div class="crow-hdr"><div class="cicon ci-i">i</div><div class="crow-title">Resources Breakdown — total files loaded</div></div>
+          <div class="mgrid" style="grid-template-columns:repeat(6,1fr)" id="res-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SOCIAL ── -->
+    <div class="sec">
+      <div class="sec-hdr purple"><div class="sec-hdr-title">Social Results</div></div>
+      <div class="sec-body" style="padding-top:5px">
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-i">i</div><div class="crow-title">Social Profile Links</div></div>
+          <div id="soc-rows" style="margin-top:8px"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-fbpx">✓</div><div class="crow-title">Facebook Pixel — <span id="fbpx-st"></span></div></div>
+          <div class="crow-val" id="fb-px"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-p">✓</div><div class="crow-title">Facebook Open Graph Tags</div></div>
+          <div style="margin:10px 0 0 28px"><table class="rtbl" id="og-tbl"></table></div></div>
+        <div class="crow" style="border-bottom:none"><div class="crow-hdr"><div class="cicon" id="ci-twcard">✓</div><div class="crow-title">X / Twitter Card Tags — <span id="twcard-st"></span></div></div>
+          <div style="margin:10px 0 0 28px"><table class="rtbl" id="tw-tbl"></table></div></div>
+      </div>
+    </div>
+
+    <!-- ── LOCAL SEO ── -->
+    <div class="sec">
+      <div class="sec-hdr teal"><div class="sec-hdr-title">Local SEO</div></div>
+      <div class="sec-body" style="padding:0 24px">
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-addr">✓</div><div class="crow-title">Address &amp; Phone on Website — <span id="addr-st"></span></div></div>
+          <div style="margin:10px 0 0 28px;background:#f8f9fb;border-radius:var(--r);padding:12px 16px;font-size:12.5px" id="loc-c"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-lschema">✓</div><div class="crow-title">Local Business Schema — <span id="lschema-st"></span></div></div>
+          <div class="crow-val" id="lschema-v"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-gbp">✓</div><div class="crow-title">Google Business Profile — <span id="gbp-st"></span></div></div>
+          <div class="gbp-card" id="gbp-card"></div></div>
+        <div class="crow" style="border-bottom:none"><div class="crow-hdr"><div class="cicon" id="ci-rev">✓</div><div class="crow-title">Google Reviews — <span id="rev-st"></span></div></div>
+          <div style="margin:12px 0 0 28px;display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="font-size:34px;font-weight:700" id="rev-r">—</div>
+              <div>
+                <div class="stars" id="rev-s">☆☆☆☆☆</div>
+                <div style="font-size:13px;color:#6b7280" id="rev-c">— reviews</div>
+              </div>
+            </div>
+            <div id="rev-bars" style="flex:1;min-width:160px;margin-top:4px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TECHNOLOGY ── -->
+    <div class="sec">
+      <div class="sec-hdr dark"><div class="sec-hdr-title">Technology Results</div></div>
+      <div class="sec-body" style="padding:0 24px">
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-i">i</div><div class="crow-title">Technology List</div></div>
+          <div style="margin:10px 0 0 28px"><table class="rtbl" id="tech-tbl"><thead><tr><th>Technology</th><th>Version</th></tr></thead><tbody id="tech-body"></tbody></table></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-dmarc">✕</div><div class="crow-title">DMARC Record — <span id="dmarc-st"></span></div></div>
+          <div class="crow-body" id="dmarc-body"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-spf">✓</div><div class="crow-title">SPF Record — <span id="spf-st"></span></div></div>
+          <div class="crow-val" id="spf-v"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-i">i</div><div class="crow-title">Server Information</div></div>
+          <div style="margin:10px 0 0 28px;display:flex;gap:10px;flex-wrap:wrap" id="srv-info"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── RECOMMENDATIONS ── -->
+    <div class="sec">
+      <div class="sec-hdr orange"><div class="sec-hdr-title">🎯 Priority Recommendations</div></div>
+      <div class="sec-body" style="padding-top:14px;padding-bottom:14px" id="recs-body"></div>
+    </div>
+
+    <div class="rpt-footer">
+      <div class="rft-l">SEO Audit for <strong id="f-dom"></strong> · Powered by <strong>Claude AI</strong></div>
+      <div style="font-size:11.5px;color:#9ca3af" id="f-date"></div>
+    </div>
+  </div><!-- /#rpt -->
+
+  <div class="bottom-bar">
+    <button class="btn-p" id="btn-print2">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Print / Save Full PDF Report
+    </button>
+    <button class="btn-g" id="btn-new2">↩ New Audit</button>
+  </div>
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const show=id=>$(id).classList.remove('hidden');
+const hide=id=>$(id).classList.add('hidden');
+const GRADES=['A+','A','A-','B+','B','B-','C+','C','C-','D+','D','D-','F'];
+function GP(g){const i=GRADES.indexOf(g);return i<0?.5:1-(i/GRADES.length)}
+function GC(g){const p=GP(g);return p>.75?'#1e8449':p>.5?'#b7770d':p>.3?'#e67e22':'#c0392b'}
+function svgC(grade,sz){
+  const s=sz||50,r=s/2-5,circ=2*Math.PI*r,c=GC(grade),fs=grade.length>2?s*.26:s*.32;
+  return`<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}">
+    <circle cx="${s/2}" cy="${s/2}" r="${r}" fill="none" stroke="#eee" stroke-width="${s*.07}"/>
+    <circle cx="${s/2}" cy="${s/2}" r="${r}" fill="none" stroke="${c}" stroke-width="${s*.07}"
+      stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${(circ*(1-GP(grade))).toFixed(1)}"
+      stroke-linecap="round" transform="rotate(-90 ${s/2} ${s/2})"/>
+    <text x="${s/2}" y="${s/2+fs*.38}" text-anchor="middle" font-family="Sora,sans-serif"
+      font-size="${fs}" font-weight="700" fill="${c}">${grade}</text></svg>`;
+}
+function tick(v){return v?'<span style="color:var(--green);font-weight:700">✓</span>':'<span style="color:#ccc">—</span>'}
+function si(id,type){const el=$(id);if(!el)return;el.className='cicon ci-'+type;el.textContent={p:'✓',f:'✕',w:'!',i:'i'}[type]||'i'}
+function gradeTxt(g){return({'A+':'excellent','A':'excellent','A-':'very good','B+':'good','B':'average','B-':'below average','C+':'needs work','C':'needs work','C-':'poor','D':'significant issues','D-':'critical issues','F':'critical issues'})[g]||'see report'}
+
+function drawRadar(cats){
+  const cv=$('radar'),ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height,cx=W/2,cy=H/2+8,R=60;
+  ctx.clearRect(0,0,W,H);
+  const labels=cats.map(c=>c.lbl),vals=cats.map(c=>GP(c.grade));
+  const n=vals.length,angles=vals.map((_,i)=>(i/n)*2*Math.PI-Math.PI/2);
+  for(let lv=1;lv<=4;lv++){ctx.beginPath();angles.forEach((a,i)=>{const rr=R*(lv/4);i===0?ctx.moveTo(cx+rr*Math.cos(a),cy+rr*Math.sin(a)):ctx.lineTo(cx+rr*Math.cos(a),cy+rr*Math.sin(a))});ctx.closePath();ctx.strokeStyle='#e8ecf0';ctx.lineWidth=1;ctx.stroke()}
+  angles.forEach(a=>{ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+R*Math.cos(a),cy+R*Math.sin(a));ctx.strokeStyle='#dde3ea';ctx.lineWidth=1;ctx.stroke()});
+  ctx.beginPath();vals.forEach((v,i)=>{const a=angles[i],rr=R*v;i===0?ctx.moveTo(cx+rr*Math.cos(a),cy+rr*Math.sin(a)):ctx.lineTo(cx+rr*Math.cos(a),cy+rr*Math.sin(a))});
+  ctx.closePath();ctx.fillStyle='rgba(192,57,43,.14)';ctx.fill();ctx.strokeStyle='#c0392b';ctx.lineWidth=2.5;ctx.stroke();
+  vals.forEach((v,i)=>{const a=angles[i],rr=R*v;ctx.beginPath();ctx.arc(cx+rr*Math.cos(a),cy+rr*Math.sin(a),3.5,0,2*Math.PI);ctx.fillStyle='#c0392b';ctx.fill()});
+  ctx.font='600 10px Sora,sans-serif';ctx.fillStyle='#95a5a6';ctx.textAlign='center';
+  angles.forEach((a,i)=>{const lx=cx+(R+22)*Math.cos(a),ly=cy+(R+22)*Math.sin(a);ctx.fillText(labels[i],lx,ly+4)});
+}
+
+function buildReport(D,name,email){
+  const date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  $('r-date').textContent='SEO Audit Report · '+date;
+  $('r-title').textContent='Website Report for '+D.domain;
+  $('r-sub').textContent='Prepared for '+name+' · '+email;
+  $('r-desc').textContent=D.overall?.summary||'AI-powered comprehensive SEO analysis.';
+  $('tb-url').textContent='https://'+D.domain;
+  $('f-dom').textContent=D.domain;
+  $('f-date').textContent=date;
+
+  // Overall grade
+  const og=D.overall?.grade||'B',oc=GC(og),ovR=62,ovCirc=2*Math.PI*ovR;
+  $('ov-arc').setAttribute('stroke',oc);
+  $('ov-arc').setAttribute('stroke-dasharray',ovCirc.toFixed(1));
+  $('ov-arc').setAttribute('stroke-dashoffset',(ovCirc*(1-GP(og))).toFixed(1));
+  $('ov-g').setAttribute('fill',oc);$('ov-g').textContent=og;
+  $('ov-lbl').textContent=gradeTxt(og).charAt(0).toUpperCase()+gradeTxt(og).slice(1);
+  $('ov-lbl').style.color=oc;
+
+  // Category grades
+  const cats=D.cats||[];
+  $('cat-grades').innerHTML=cats.map(c=>`<div class="cat-g">${svgC(c.grade,57)}<div class="cat-g-lbl">${c.lbl}</div></div>`).join('');
+  cats.forEach(c=>{
+    // sec-hdr mini grade circle (white on red bg)
+    const e=$('cg-'+c.k);
+    if(e){
+      const g=c.grade,sz=44,r=sz/2-4,circ=(2*Math.PI*r).toFixed(1),fs=g.length>2?11:13;
+      e.innerHTML=`<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}">
+        <circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="3.5"/>
+        <circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="#fff" stroke-width="3.5"
+          stroke-dasharray="${circ}" stroke-dashoffset="${(2*Math.PI*r*(1-GP(g))).toFixed(1)}"
+          stroke-linecap="round" transform="rotate(-90 ${sz/2} ${sz/2})"/>
+        <text x="${sz/2}" y="${sz/2+fs*.38}" text-anchor="middle" font-family="Sora,sans-serif"
+          font-size="${fs}" font-weight="700" fill="#fff">${g}</text></svg>`;
+    }
+    // sec-intro large grade circle (colored)
+    const s=$('si-'+c.k);if(s)s.innerHTML=svgC(c.grade,67);
+  });
+  drawRadar(cats);
+
+  // ── ON-PAGE ──
+  const op=D.op||{};
+  const opG=cats.find(c=>c.k==='op')?.grade||'B';
+  $('op-h').textContent=GP(opG)>.66?'Your On-Page SEO is very good!':'Your On-Page SEO needs attention';
+  $('op-p').textContent='Analysis of title tags, meta descriptions, headings, keywords, and content structure for '+D.domain;
+
+  $('serp-url').textContent='https://'+D.domain;
+  $('serp-title').textContent=op.serpTitle||(op.title?.t||'').substring(0,57);
+  $('serp-desc').textContent=op.serpDesc||(op.meta?.t||'').substring(0,155)+'...';
+
+  const ttOk=op.title?.ok===true;
+  si('ci-tt',ttOk?'p':op.title?.len>0?'w':'f');
+  $('tt-st').textContent=(ttOk?'optimal':'adjust needed')+' — '+(op.title?.len||0)+' characters';
+  $('tt-val').textContent=op.title?.t||'Not found';
+  $('tt-body').textContent=op.titleAdvice||(ttOk?'Title length is optimal (50–60 chars).':'Shorten title to 50–60 characters for best SERP display.');
+
+  const mtOk=op.meta?.ok===true;
+  si('ci-meta',mtOk?'p':op.meta?.len>0?'w':'f');
+  $('meta-st').textContent=(mtOk?'optimal':'adjust needed')+' — '+(op.meta?.len||0)+' characters';
+  $('meta-val').textContent=op.meta?.t||'Not found';
+  $('meta-body').textContent=op.metaAdvice||(mtOk?'Meta description is at optimal length.':'Adjust to 120–160 characters.');
+
+  // Hreflang
+  si('ci-hreflang',op.hreflang?'p':'i');
+  $('hreflang-st').textContent=op.hreflang?'in use':'not in use';
+  $('hreflang-body').textContent=op.hreflangDesc||'No hreflang tags found. Add if targeting multiple countries or languages.';
+
+  // Language
+  si('ci-lang',op.langOk?'p':'w');
+  $('lang-st').textContent=op.langOk?'using lang attribute':'lang attribute missing';
+  $('lang-v').textContent=op.lang?'Declared: '+op.lang:'Not set';
+
+  // H1
+  const h1Ok=(op.h1?.length||0)===1;
+  si('ci-h1',h1Ok?'p':op.h1?.length>1?'w':'f');
+  $('h1-st').textContent=h1Ok?'one H1 found':op.h1?.length>1?'multiple H1 tags':'H1 missing';
+  $('h1-body').innerHTML=(op.h1||[{tag:'H1',v:'Not found'}]).map(h=>`<tr><td><strong>${h.tag}</strong></td><td>${h.v}</td></tr>`).join('');
+
+  // H freq
+  $('hfreq-grid').innerHTML=(op.hfreq||[]).filter(h=>h.n>0).map(h=>`<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px 16px;text-align:center;min-width:70px"><div style="font-size:22px;font-weight:700;color:#e8453c">${h.n}</div><div style="font-size:10px;color:#9ca3af;margin-top:2px">${h.t} Tags</div></div>`).join('');
+
+  // Keywords
+  $('kw-body').innerHTML=(op.kws||[]).map(k=>`<tr><td><strong>${k.p}</strong></td><td style="text-align:center">${tick(k.ti)}</td><td style="text-align:center">${tick(k.me)}</td><td style="text-align:center">${tick(k.hd)}</td><td style="text-align:center;font-weight:600">${k.f||'—'}</td></tr>`).join('');
+
+  // Word count
+  const wc=op.wc||0,wcOk=op.wcOk===true;
+  si('ci-wc',wcOk?'p':'w');
+  $('wc-st').textContent=wc.toLocaleString()+' words — '+(wcOk?'good level of content':'below recommended minimum');
+  $('wc-body').textContent='Word Count: '+wc.toLocaleString()+'. '+(wcOk?'Sufficient content to aid ranking potential.':'Add more content — aim for at least 500 words on key pages.');
+
+  // Image alt
+  si('ci-alt',op.imgAlt?'p':'w');
+  $('alt-st').textContent=op.imgAlt?'all images have alt text':'some images missing alt text';
+  $('alt-body').textContent=op.imgAltDesc||'';
+
+  // Canonical
+  si('ci-canon',op.canonOk?'p':'w');
+  $('canon-st').textContent=op.canonOk?'using canonical tag':'canonical tag missing';
+  $('canon-v').textContent=op.canon||'Not detected';
+
+  // Noindex
+  si('ci-noindex',op.noindexOk?'p':'f');
+  $('noindex-st').textContent=op.noindex?'noindex tag detected — page will not rank!':'no noindex tag — page is indexable';
+  $('noindex-body').textContent=op.noindex?'Remove the noindex tag immediately if you want this page to rank in search engines.':'Your page is not blocking search engines.';
+
+  // HTTPS redirect
+  si('ci-https',op.httpsRedir?'p':'f');
+  $('https-st').textContent=op.httpsRedir?'redirects to HTTPS':'not redirecting to HTTPS';
+  $('https-body').textContent=op.httpsRedir?'Your page successfully redirects to a HTTPS SSL secure version.':'Configure your server to redirect all HTTP traffic to HTTPS.';
+
+  // Robots
+  si('ci-robots',op.robotsOk?'p':'f');
+  $('robots-st').textContent=op.robotsOk?'robots.txt found':'robots.txt missing';
+  $('robots-v').textContent=op.robots||'Not found';
+  si('ci-robblock',!op.robotsBlocked?'p':'f');
+  $('robblock-st').textContent=op.robotsBlocked?'page is BLOCKED by robots.txt!':'page is not blocked by robots.txt';
+
+  // Sitemap
+  si('ci-sitemap',op.sitemapOk?'p':'f');
+  $('sitemap-st').textContent=op.sitemapOk?'XML sitemap found':'sitemap missing';
+  $('sitemap-v').textContent=op.sitemap||'Not found';
+
+  // Analytics
+  si('ci-analytics',op.analytics?'p':'w');
+  $('analytics-st').textContent=op.analytics?'analytics tool detected':'no analytics detected';
+  $('analytics-v').textContent=(op.analyticsTools||[]).join(', ')||'None detected';
+
+  // Schema
+  si('ci-schema',op.schema?'p':'w');
+  $('schema-st').textContent=op.schema?'structured data detected':'no structured data found';
+  $('schema-body').textContent=op.schema?'Using '+(op.schemaTypes||[]).join(', ')+' schema markup.':'Add Schema.org markup to improve how search engines and AI understand your content.';
+
+  // AMP
+  $('amp-st').textContent=op.amp?'AMP enabled':'AMP not enabled';
+  $('amp-body').textContent=op.ampDesc||'AMP is optional but can help mobile performance in some cases.';
+
+  // ── GEO ──
+  const geo=D.geo||{};
+  const geoG=cats.find(c=>c.k==='geo')?.grade||'A';
+  $('geo-h').textContent=GP(geoG)>.66?'Your GEO / AI Visibility is very good!':'Your GEO / AI Visibility needs improvement';
+  $('geo-p').textContent='Evaluating how LLMs and AI search engines can crawl and understand '+D.domain;
+
+  si('ci-render',geo.renderOk?'p':'w');
+  $('render-st').textContent=geo.renderOk?'low render percentage — good for LLMs':'high render percentage — harder for LLMs';
+  $('render-body').textContent=geo.renderDesc||'';
+  $('render-pct').textContent=geo.renderPct||'Unknown';
+
+  si('ci-llms',geo.llmsTxt?'p':'w');
+  $('llms-st').textContent=geo.llmsTxt?'llms.txt found':'llms.txt not found';
+  $('llms-url').textContent=geo.llmsTxtUrl||'Not found';
+  $('llms-body').textContent=geo.llmsDesc||'';
+
+  const tr=geo.traffic||{};
+  $('traffic-grid').innerHTML=[['Google Organic',tr.org||0],['Paid Search',tr.paid||0],['AI Overviews',tr.ai||0]].map(([l,v])=>`<div class="mcard"><div class="mval" style="color:${v>0?'#16a34a':'#9ca3af'}">${v.toLocaleString()}</div><div class="mlbl">${l}</div></div>`).join('');
+
+  $('kw-rank').innerHTML=(geo.kws||[]).map(k=>`<tr><td><strong>${k.kw}</strong></td><td>${k.co}</td><td><span class="${k.pos<=3?'pb-g':k.pos<=10?'pb-w':'pb-r'}">${k.pos}</span></td><td>${(k.vol||0).toLocaleString()}</td><td>${k.tr||0}</td></tr>`).join('');
+  $('kw-pos').innerHTML=(geo.positions||[]).map(p=>`<tr><td>${p.r}</td><td><strong>${p.n}</strong></td></tr>`).join('');
+
+  // ── USABILITY ──
+  const us=D.us||{};
+  const usG=cats.find(c=>c.k==='us')?.grade||'B';
+  $('us-h').textContent=GP(usG)>.66?'Your usability is good':'Your usability could be better';
+  $('us-p').textContent='Usability issues affect bounce rates and user satisfaction — both indirectly impact search rankings.';
+
+  const cwv=us.cwv||{},crux=us.crux||{};
+  const lcpV=parseFloat(cwv.lcp),inpV=parseFloat(cwv.inp),clsV=parseFloat(cwv.cls);
+  const hasCrux=crux.has_data||cwv.lcp&&cwv.lcp!=='N/A';
+  si('ci-cwv',cwv.pass===true?'p':cwv.pass===false?'f':'i');
+  $('cwv-st').textContent=cwv.pass===true?'passed assessment':cwv.pass===false?'failed assessment':hasCrux?'partial data':'data unavailable';
+  $('cwv-adv').textContent=us.cwvAdvice||'';
+
+  // Source badge
+  const cruxSrc=cwv.source||crux.source||'';
+  const srcBadge=cruxSrc?`<span style="font-size:10px;background:#eff6ff;color:#2563eb;border:0.5px solid #bfdbfe;border-radius:20px;padding:2px 8px;margin-left:8px">${cruxSrc.includes('url')?'URL-level field data':'Origin-level field data'} · Chrome UX Report</span>`:'';
+  if($('cwv-src'))$('cwv-src').innerHTML=srcBadge;
+
+  function ratingCol(r){return r==='FAST'?'gv-g':r==='MODERATE'?'gv-w':r?'gv-b':'';}
+  function ratingBadge(r){
+    if(!r)return'';
+    const bg=r==='FAST'?'#ecfdf5':r==='MODERATE'?'#fffbeb':'#fef2f2';
+    const col=r==='FAST'?'#059669':r==='MODERATE'?'#d97706':'#dc2626';
+    const bdr=r==='FAST'?'#a7f3d0':r==='MODERATE'?'#fde68a':'#fecaca';
+    return `<div style="font-size:9px;font-weight:600;background:${bg};color:${col};border:0.5px solid ${bdr};border-radius:20px;padding:1px 7px;margin-top:4px">${r}</div>`;
+  }
+
+  $('cwv-lcp').textContent=cwv.lcp||'N/A';
+  $('cwv-lcp').className='gauge-val '+(ratingCol(cwv.lcp_rating)||(isNaN(lcpV)?'':(lcpV<=2.5?'gv-g':lcpV<=4?'gv-w':'gv-b')));
+  if($('cwv-lcp-r'))$('cwv-lcp-r').innerHTML=ratingBadge(cwv.lcp_rating);
+  $('cwv-inp').textContent=cwv.inp||'N/A';
+  $('cwv-inp').className='gauge-val '+(ratingCol(cwv.inp_rating)||(isNaN(inpV)?'':(inpV<=200?'gv-g':inpV<=500?'gv-w':'gv-b')));
+  if($('cwv-inp-r'))$('cwv-inp-r').innerHTML=ratingBadge(cwv.inp_rating);
+  $('cwv-cls').textContent=cwv.cls||'N/A';
+  $('cwv-cls').className='gauge-val '+(ratingCol(cwv.cls_rating)||(isNaN(clsV)?'':(clsV<=.1?'gv-g':clsV<=.25?'gv-w':'gv-b')));
+  if($('cwv-cls-r'))$('cwv-cls-r').innerHTML=ratingBadge(cwv.cls_rating);
+
+  // Extra CrUX metrics
+  if(cwv.fcp&&$('cwv-fcp'))$('cwv-fcp').textContent=cwv.fcp;
+  if(cwv.ttfb&&$('cwv-ttfb'))$('cwv-ttfb').textContent=cwv.ttfb;
+
+  const mob=us.mob||{},hasMob=mob.score>0;
+  const mc=!hasMob?'var(--lite)':mob.score>=90?'var(--green)':mob.score>=50?'var(--warn)':'var(--fail)';
+  $('mob-score').textContent=hasMob?mob.score:'—';$('mob-score').style.color=mc;$('mob-circle').style.borderColor=mc;
+  si('ci-mob',!hasMob?'i':mob.score>=90?'p':mob.score>=50?'w':'f');
+  $('mob-lbl').textContent=!hasMob?'PageSpeed API not configured':mob.score>=90?'excellent':mob.score>=50?'needs improvement':'scoring poorly';$('mob-lbl').style.color=mc;
+  $('mob-tbl').innerHTML=[['First Contentful Paint',mob.fcp],['Speed Index',mob.si],['Largest Contentful Paint',mob.lcp],['Time to Interactive',mob.tti],['Total Blocking Time',mob.tbt],['Cumulative Layout Shift',mob.cls]].map(([l,v])=>`<tr><td>${l}</td><td><strong>${v||'—'}</strong></td></tr>`).join('');
+  $('mob-opp').innerHTML=(mob.opps||[]).length?mob.opps.map(o=>`<tr><td>${o.n}</td><td><strong style="color:#d97706">${o.s}</strong></td></tr>`).join(''):'<tr><td colspan="2" style="color:#9ca3af;font-style:italic">No major opportunities found</td></tr>';
+
+  const desk=us.desk||{},hasDesk=desk.score>0;
+  const dc=!hasDesk?'var(--lite)':desk.score>=90?'var(--green)':desk.score>=50?'var(--warn)':'var(--fail)';
+  $('desk-score').textContent=hasDesk?desk.score:'—';$('desk-score').style.color=dc;$('desk-circle').style.borderColor=dc;
+  si('ci-desk',!hasDesk?'i':desk.score>=90?'p':desk.score>=50?'w':'f');
+  $('desk-lbl').textContent=!hasDesk?'PageSpeed API not configured':desk.score>=90?'excellent':desk.score>=50?'needs improvement':'scoring poorly';$('desk-lbl').style.color=dc;
+  $('desk-tbl').innerHTML=[['First Contentful Paint',desk.fcp],['Speed Index',desk.si],['Largest Contentful Paint',desk.lcp],['Time to Interactive',desk.tti],['Total Blocking Time',desk.tbt],['Cumulative Layout Shift',desk.cls]].map(([l,v])=>`<tr><td>${l}</td><td><strong>${v||'—'}</strong></td></tr>`).join('');
+  $('desk-opp').innerHTML=(desk.opps||[]).length?desk.opps.map(o=>`<tr><td>${o.n}</td><td><strong style="color:#d97706">${o.s}</strong></td></tr>`).join(''):'<tr><td colspan="2" style="color:#9ca3af;font-style:italic">No major opportunities found</td></tr>';
+
+  $('viewport-st').textContent=us.viewport?'correctly specified':'not specified';
+  si('ci-iframe',us.iframes?'w':'p');$('iframe-st').textContent=us.iframes?'iFrames detected':'no iFrames detected';$('iframe-body').textContent=us.iframesDesc||'';
+  $('font-st').textContent=us.fontSizes?'text is readable across devices':'potential readability issues';
+  $('tap-st').textContent=us.tapTargets?'appropriately sized':'some targets may be too small';
+  si('ci-fav',us.favicon?'p':'w');$('fav-st').textContent=us.favicon?'favicon specified':'no favicon found';
+  si('ci-email',us.emailPrivacy?'p':'w');$('email-st').textContent=us.emailPrivacy?'no plain-text emails exposed':'plain-text email addresses found';
+
+  // ── PERFORMANCE ──
+  const pf=D.pf||{};
+  const pfG=cats.find(c=>c.k==='pf')?.grade||'A';
+  $('pf-h').textContent=GP(pfG)>.66?'Your performance is good':'Your performance needs improvement';
+  $('pf-p').textContent='Page speed, download size, compression, and resource breakdown for '+D.domain;
+
+  const spd=pf.speed||{};
+  si('ci-spd',spd.ok?'p':'w');$('spd-st').textContent=spd.ok?'loads in a reasonable time':'slow — needs improvement';
+  function spdCol(val,goodMax,warnMax){const n=parseFloat(val)||0;return n===0?'gv-n':n<=goodMax?'gv-g':n<=warnMax?'gv-w':'gv-b'}
+  $('sp-srv').textContent=spd.srv||'—';$('sp-srv').className='gauge-val '+spdCol(spd.srv,0.6,1.5);
+  $('sp-cnt').textContent=spd.cnt||'—';$('sp-cnt').className='gauge-val '+spdCol(spd.cnt,3,6);
+  $('sp-scr').textContent=spd.scr||'—';$('sp-scr').className='gauge-val '+spdCol(spd.scr,5,10);
+
+  const sz=pf.size||{};
+  si('ci-sz',sz.ok?'p':'w');$('sz-st').textContent=sz.ok?'file size is reasonably low':'file size is too large';
+  $('sz-tot').textContent=sz.tot||'—';
+  const szColors={HTML:'#3b82f6',CSS:'#0891b2',JavaScript:'#d97706',Images:'#16a34a',Other:'#9ca3af'};
+  $('sz-bars').innerHTML=[['HTML',sz.html],['CSS',sz.css],['JavaScript',sz.js],['Images',sz.img],['Other',sz.other]].map(([l,v])=>{const n=parseFloat(v)||0,p=Math.min(Math.round(n/5*100),100),col=szColors[l]||'#9ca3af';return`<div class="sbar"><div class="sbar-l">${l}</div><div class="sbar-tr"><div class="sbar-fi" style="width:${p}%;background:${col}"></div></div><div class="sbar-v">${v||'—'}</div></div>`}).join('');
+
+  const comp=pf.comp||{};
+  si('ci-comp',comp.ok?'p':'w');$('comp-st').textContent=comp.ok?'compression active':'limited compression';
+  $('comp-r').textContent=comp.rate||'—';
+  $('comp-tbl').innerHTML=[['HTML',comp.html],['CSS',comp.css],['JavaScript',comp.js],['Images',comp.img],['Other',comp.other]].map(([l,v])=>{const n=parseInt(v)||0,col=n>=50?'#1e8449':n>0?'#b7770d':'#ccc';return`<tr><td style="width:80px;padding:4px 0;font-size:12px;color:#6b7280">${l}</td><td><div class="cbar-wrap"><div class="cbar-tr"><div class="cbar-fi" style="width:${n}%;background:${col}"></div></div><span style="font-size:11.5px;color:var(--lite);width:38px;text-align:right">${v||'—'}</span></div></td></tr>`}).join('');
+
+  si('ci-http2',pf.http2?'p':'w');$('http2-st').textContent=pf.http2?'HTTP/2 protocol in use':'not using HTTP/2 — update recommended';
+  si('ci-imgopt',pf.imgOpt?'p':'w');$('imgopt-st').textContent=pf.imgOpt?'all images appear optimised':'some images need optimisation';
+  si('ci-minify',!pf.minify?'p':'w');$('minify-st').textContent=pf.minify?'some files not minified':'all files appear minified';$('minify-body').textContent=pf.minifyDesc||'';
+  si('ci-jserr',pf.jsErrors?'f':'p');$('jserr-st').textContent=pf.jsErrors?'errors detected':'no errors detected';$('js-err').textContent=pf.jsErrDesc||'';$('jserr-body').textContent=pf.jsErrors?'JavaScript errors can break functionality. Investigate and resolve all JS errors.':'No JavaScript errors detected.';
+  si('ci-inline',pf.inlineStyles?'w':'p');$('inline-st').textContent=pf.inlineStyles?'inline styles detected — move to CSS':'no inline styles';$('inline-body').textContent=pf.inlineDesc||'';
+  $('dep-st').textContent=(pf.depHtml?'deprecated HTML found':'no deprecated HTML tags found');
+
+  const res=pf.res||{};
+  $('res-grid').innerHTML=[['Total',res.tot],['HTML',res.html],['JS',res.js],['CSS',res.css],['Images',res.img],['Other',res.other]].map(([l,v])=>`<div class="mcard"><div class="mval">${v||0}</div><div class="mlbl">${l}</div></div>`).join('');
+
+  // ── SOCIAL ──
+  $('soc-rows').innerHTML=(D.social||[]).map(s=>`<div class="soc-row">
+    <div class="soc-ic" style="background:${s.bg};color:${s.c}">${s.ico}</div>
+    <div style="flex:1">
+      <div class="soc-name">${s.name} — ${s.linked?'linked':'not linked'}</div>
+      <div class="soc-url">${s.url||''}</div>
+      ${s.stat&&s.stat.trim()?`<div class="soc-stat" style="color:#16a34a;font-size:11px;font-weight:600">${s.stat}</div>`:''}
+    </div>
+    <div style="color:${s.linked?'var(--green)':'var(--lite)'};font-size:15px;font-weight:700">${s.linked?'✓':'—'}</div>
+  </div>`).join('');
+
+  si('ci-fbpx',D.fbPixelOk?'p':'w');
+  $('fbpx-st').textContent=D.fbPixelOk?'installed':'not found';
+  $('fb-px').textContent=D.fbPixel?'Pixel ID: '+D.fbPixel:'Not detected';
+
+  $('og-tbl').innerHTML='<thead><tr><th>Tag</th><th>Content</th></tr></thead><tbody>'+(D.ogTags||[]).map(t=>`<tr><td><code>${t.t}</code></td><td style="word-break:break-all;color:var(--sub)">${t.v}</td></tr>`).join('')+'</tbody>';
+
+  si('ci-twcard',D.twitterCard?'p':'w');
+  $('twcard-st').textContent=D.twitterCard?'configured':'not found';
+  $('tw-tbl').innerHTML='<thead><tr><th>Tag</th><th>Content</th></tr></thead><tbody>'+(D.twitterTags||[]).map(t=>`<tr><td><code>${t.t}</code></td><td style="word-break:break-all;color:var(--sub)">${t.v}</td></tr>`).join('')+'</tbody>';
+
+  // ── LOCAL SEO ──
+  const loc=D.local||{};
+  si('ci-addr',loc.hasAddress?'p':'w');
+  $('addr-st').textContent=loc.hasAddress?'address and phone visible':'address or phone not found';
+  $('loc-c').innerHTML=loc.hasAddress?`<div><strong>Phone:</strong> ${loc.phone||'—'}</div><div style="margin-top:5px"><strong>Address:</strong> ${loc.addr||'—'}</div>`:'No address or phone detected on page.';
+
+  si('ci-lschema',loc.localSchema?'p':'w');
+  $('lschema-st').textContent=loc.localSchema?'identified on page':'not found';
+  $('lschema-v').textContent=loc.schemaType?loc.schemaType+' schema markup detected':'LocalBusiness schema not found';
+
+  const gbp=loc.gbp||{};
+  si('ci-gbp',gbp.found?'p':'w');
+  $('gbp-st').textContent=gbp.found?'identified':'not found';
+  $('gbp-card').innerHTML=gbp.found?`<div style="font-weight:600">${gbp.name||'—'}</div><div style="margin-top:5px;color:var(--sub)">${gbp.addr||'—'}</div><div style="margin-top:4px;color:var(--sub)">📞 ${gbp.phone||'—'}</div>`:'No Google Business Profile found for this domain.';
+
+  const rev=loc.reviews||{};
+  const rating=rev.rating||0,stars=Math.round(rating);
+  si('ci-rev',rating>=4?'p':rating>=3?'w':'f');
+  $('rev-st').textContent=rating>=4?'good rating':'rating needs improvement';
+  $('rev-r').textContent=rating||'—';
+  $('rev-s').textContent='★'.repeat(stars)+'☆'.repeat(5-stars);
+  $('rev-c').textContent=(rev.count||0)+' reviews';
+  const dist=rev.dist||[0,0,0,0,0],maxDist=Math.max(...dist,1);
+  $('rev-bars').innerHTML=[5,4,3,2,1].map((star,i)=>`<div class="rbar-row"><div class="rbar-lbl">${star}</div><div class="rbar-tr"><div class="rbar-fi" style="width:${Math.round((dist[i]||0)/maxDist*100)}%"></div></div><div class="rbar-n">${dist[i]||0}</div></div>`).join('');
+
+  // ── TECHNOLOGY ──
+  const tech=D.tech||{};
+  $('tech-body').innerHTML=(tech.list||[]).map(t=>`<tr><td>${t.name}</td><td style="color:var(--lite)">${t.ver||''}</td></tr>`).join('');
+
+  si('ci-dmarc',tech.dmarc?'p':'f');
+  $('dmarc-st').textContent=tech.dmarc?'DMARC record found':'not found';
+  $('dmarc-body').textContent=tech.dmarcDesc||'';
+
+  si('ci-spf',tech.spf?'p':'w');
+  $('spf-st').textContent=tech.spf?'SPF record found':'not found';
+  $('spf-v').textContent=tech.spfRecord||'Not found';
+
+  $('srv-info').innerHTML=[
+    tech.server?`<div class="ttech">Server: ${tech.server}</div>`:'',
+    tech.serverIp?`<div class="ttech">IP: ${tech.serverIp}</div>`:'',
+    tech.charset?`<div class="ttech">Charset: ${tech.charset}</div>`:'',
+    tech.http2?`<div class="ttech">HTTP/2 ✓</div>`:'',
+    tech.http3?`<div class="ttech">HTTP/3 ✓</div>`:''
+  ].filter(Boolean).join('');
+
+  // ── RECOMMENDATIONS — HOTH numbered red-panel cards ──
+  $('recs-body').innerHTML=(D.recommendations||[]).map((r,i)=>`
+    <div class="rec-item" style="${i===0?'':'margin-top:10px'}">
+      <div class="rec-num">${r.priority||i+1}</div>
+      <div class="rec-body">
+        <div class="rec-title">${r.title||''}</div>
+        <div class="rec-detail">${r.detail||''}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Main ──
+$('btn-start').onclick=()=>{
+  const url=$('f-url').value.trim(),name=$('f-name').value.trim(),email=$('f-email').value.trim();
+  window._lastAuditUrl = url;
+  let ok=true;
+  const se=(id,m)=>{$(id).textContent=m;$(id).style.display='block';$('f-'+id.split('-')[1]).classList.add('err')};
+  const he=id=>{$(id).style.display='none';$('f-'+id.split('-')[1]).classList.remove('err')};
+  if(!url||!/^https?:\/\/.+\..+/.test(url)){se('e-url','Enter a valid URL e.g. https://yourwebsite.com');ok=false}else he('e-url');
+  if(!name){se('e-name','Name is required');ok=false}else he('e-name');
+  if(!email||!/\S+@\S+\.\S+/.test(email)){se('e-email','Enter a valid email');ok=false}else he('e-email');
+  if(!ok)return;
+
+  const domain=url.replace(/^https?:\/\//,'').split('/')[0];
+  hide('page-form');show('page-loading');
+  $('l-dom').textContent='Auditing '+domain;
+  $('btn-start').disabled=true;
+
+  const log=$('l-log');
+  const STEPS=['Fetching website content...','Reading title and meta tags...','Scanning heading structure...','Extracting keyword data...','Checking canonical and robots.txt...','Looking up XML sitemap...','Verifying HTTPS redirect...','Detecting analytics tools...','Reading schema markup...','Checking Open Graph tags...','Searching social profiles...','Looking up Google Business Profile...','Analysing Core Web Vitals...','Fetching PageSpeed — Mobile...','Fetching PageSpeed — Desktop...','Checking page size & compression...','Detecting technology stack...','Checking DMARC & SPF records...','Evaluating GEO / AI visibility...','Checking llms.txt...','Looking up keyword rankings...','Compiling grades...','Generating recommendations...','Finalising report...'];
+  let stepIdx=0,pollTimer=null;
+
+  function tickStep(){
+    if(stepIdx<STEPS.length){
+      if(stepIdx>0){const d=document.createElement('div');d.className='slog';d.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>'+STEPS[stepIdx-1].replace('...','');log.appendChild(d);log.scrollTop=log.scrollHeight;}
+      $('l-step').textContent=STEPS[stepIdx];
+      const pct=Math.min(Math.round((stepIdx/STEPS.length)*88),88);
+      $('pbar').style.width=pct+'%';$('l-pct').textContent=pct+'% complete';
+      stepIdx++;
+    }
+  }
+
+  function done(data,n,e){
+    clearInterval(pollTimer);
+    $('pbar').style.width='100%';$('l-pct').textContent='100% complete';$('l-step').textContent='Report ready!';
+    setTimeout(()=>{
+      hide('page-loading');
+      data._url = window._lastAuditUrl || '';
+      buildReport(data,n,e);
+      // Show email modal before revealing report
+      openEmailModal(data,n,e);
+    },600);
+  }
+  function fail(msg){
+    clearInterval(pollTimer);
+    hide('page-loading');$('err-msg').textContent=msg||'An error occurred. Please try again.';show('page-error');$('btn-start').disabled=false;
+  }
+
+// 1 — Create job_id in Redis via audit_start (fast, <2s)
+  fetch('/api/audit_start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,name,email})})
+  .then(r=>r.json())
+  .then(({job_id,error})=>{
+    if(error||!job_id) return fail(error||'Failed to start audit');
+
+    const progressTimer=setInterval(tickStep,3000);
+
+    // 2 — Call audit_run directly (long-running, waits for result)
+    fetch('/api/audit_run',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({job_id,url})
+    }).catch(()=>{}); // fire and don't await — let poll pick up result
+
+    // 3 — Poll Redis every 5s for result
+    let attempts=0;
+    pollTimer=setInterval(()=>{
+      attempts++;
+      if(attempts>90){clearInterval(progressTimer);clearInterval(pollTimer);return fail('Audit timed out. Please try again.');}
+      fetch(`/api/audit_poll?job_id=${job_id}`)
+        .then(r=>r.json())
+        .then(res=>{
+          if(res.status==='done'){
+            clearInterval(progressTimer);clearInterval(pollTimer);
+            _lastJobId = job_id;
+            done(res.data,res.name||name,res.email||email);
+          } else if(res.status==='error'){
+            clearInterval(progressTimer);clearInterval(pollTimer);
+            fail(res.message||'Audit failed. Please try again.');
+          }
+        }).catch(()=>{});
+    },5000);
+  })
+.catch(err=>fail('Network error: '+err.message));
+};
+
+function doReset(){hide('page-report');hide('page-error');show('page-form');window.scrollTo(0,0);$('l-log').innerHTML='';$('pbar').style.width='0%';$('l-pct').textContent='0% complete';$('l-step').textContent='Initialising AI audit engine...'}
+$('btn-print').onclick=$('btn-print2').onclick=()=>window.print();
+$('btn-new').onclick=$('btn-new2').onclick=$('btn-retry').onclick=doReset;
+['f-url','f-name','f-email'].forEach(id=>{$(id).addEventListener('keydown',e=>{if(e.key==='Enter')$('btn-start').click()})});
+
+/* ══ EMAIL MODAL ══ */
+let _modalData=null, _modalName='', _modalEmail='', _modalJobId='';
+
+function openEmailModal(data, name, email){
+  _modalData  = data;
+  _modalName  = name;
+  _modalEmail = email;
+
+  // Pre-fill with audit email if it looks valid
+  const inp = $('em-email-inp');
+  inp.value = /\S+@\S+\.\S+/.test(email) ? email : '';
+
+  // Reset modal to form state
+  $('em-form-section').style.display    = 'block';
+  $('em-sending-section').style.display = 'none';
+  $('em-success-section').style.display = 'none';
+  $('em-errmsg').style.display          = 'none';
+  inp.classList.remove('em-err-inp');
+  $('em-btn-send').disabled = false;
+
+  $('email-modal-overlay').classList.add('open');
+  inp.focus();
+}
+
+function closeModalAndShowReport(){
+  $('email-modal-overlay').classList.remove('open');
+  show('page-report');
+  // Load device preview screenshots
+  try {
+    const auditUrl = D._url || window._lastAuditUrl || '';
+    if (auditUrl) {
+      const urlBar = $('desk-url-bar');
+      if(urlBar) urlBar.textContent = auditUrl;
+
+      // Use PSI screenshot data if available (from PAGESPEED_API_KEY)
+      const mobShot = D.us?.mob?._screenshot;
+      const deskShot = D.us?.desk?._screenshot;
+
+      // Fallback: use a public screenshot service
+      // thum.io provides free screenshots (no key needed)
+      const enc = encodeURIComponent(auditUrl);
+
+      function loadScreenshot(containerId, shotData, serviceUrl, fallbackMsg) {
+        const el = $(containerId);
+        if (!el) return;
+        if (shotData) {
+          // PSI provides base64 screenshot
+          el.innerHTML = `<img src="data:image/jpeg;base64,${shotData}"
+            style="width:100%;height:100%;object-fit:cover;object-position:top" alt="Screenshot"/>`;
+        } else {
+          // Try screenshot service
+          const img = document.createElement('img');
+          img.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:top';
+          img.alt = 'Site preview';
+          img.onload = () => {};
+          img.onerror = () => {
+            el.innerHTML = `<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px;background:#f9fafb">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+              <div style="font-size:10px;color:#9ca3af;text-align:center">Preview unavailable<br><span style="font-size:9px">(site blocks external loading)</span></div>
+              <a href="${auditUrl}" target="_blank" style="font-size:10px;color:#3b82f6;text-decoration:none">Open site ↗</a>
+            </div>`;
+          };
+          // Use thum.io free screenshot service
+          img.src = `https://image.thum.io/get/width/600/crop/400/${auditUrl}`;
+          el.innerHTML = '';
+          el.appendChild(img);
+        }
+      }
+
+      // Mobile — use portrait crop
+      loadScreenshot('mob-screen', mobShot,
+        `https://image.thum.io/get/width/390/crop/844/${enc}`, 'Mobile preview');
+
+      // Tablet
+      loadScreenshot('tab-screen', null,
+        `https://image.thum.io/get/width/768/crop/600/${enc}`, 'Tablet preview');
+
+      // Desktop
+      loadScreenshot('desk-screen', deskShot,
+        `https://image.thum.io/get/width/1280/crop/800/${enc}`, 'Desktop preview');
+    }
+  } catch(e){ console.warn('Device preview error:', e); }
+  window.scrollTo(0,0);
+  $('btn-start').disabled=false;
+}
+
+// Get job_id from Redis key — we store it when poll succeeds
+// We need to pass job_id through; grab it from the poll closure
+// Store job_id globally when poll succeeds
+let _lastJobId = '';
+
+// ── Send email button ──
+$('em-btn-send').onclick = async function(){
+  const emailVal = $('em-email-inp').value.trim();
+  const errEl    = $('em-errmsg');
+
+  // Client-side validation
+  if(!emailVal || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailVal)){
+    errEl.textContent = 'Please enter a valid email address.';
+    errEl.style.display = 'block';
+    $('em-email-inp').classList.add('em-err-inp');
+    return;
+  }
+  errEl.style.display = 'none';
+  $('em-email-inp').classList.remove('em-err-inp');
+
+  // Show sending state
+  $('em-form-section').style.display    = 'none';
+  $('em-sending-section').style.display = 'block';
+  $('em-btn-send').disabled = true;
+
+  // Call send_email API
+  try{
+    const res = await fetch('/api/send_email',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({job_id: _lastJobId, email: emailVal})
+    });
+    const json = await res.json();
+
+    // Open report in background
+    closeModalAndShowReport();
+
+    // Show success briefly
+    $('em-sending-section').style.display = 'none';
+    $('em-success-section').style.display = 'block';
+    $('email-modal-overlay').classList.add('open');
+
+    if(json.ok){
+      $('em-success-msg').textContent = `Report sent to ${emailVal}. Check your inbox!`;
+    } else {
+      $('em-success-msg').textContent = `Could not send email: ${json.error||'Unknown error'}. Your report is open below.`;
+    }
+
+    // Auto-close modal after 3s
+    setTimeout(()=>{ $('email-modal-overlay').classList.remove('open'); }, 3500);
+
+  } catch(err){
+    // Network error — just open report anyway
+    closeModalAndShowReport();
+    $('email-modal-overlay').classList.remove('open');
+  }
+};
+
+// ── Skip button ──
+$('em-btn-skip').onclick = closeModalAndShowReport;
+
+// ── Close X button ──
+$('em-close').onclick = closeModalAndShowReport;
+
+// ── Close on overlay click ──
+$('email-modal-overlay').onclick = function(e){
+  if(e.target === this) closeModalAndShowReport();
+};
+
+// ── Close success button ──
+$('em-btn-close-success').onclick = function(){
+  $('email-modal-overlay').classList.remove('open');
+};
+
+// ── ESC key closes modal ──
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape' && $('email-modal-overlay').classList.contains('open')){
+    closeModalAndShowReport();
+  }
+});
+
+// ── Enter key in email modal input ──
+$('em-email-inp').addEventListener('keydown', e=>{
+  if(e.key==='Enter') $('em-btn-send').click();
+});
+</script>
+</body>
+</html>

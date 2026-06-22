@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "api/*.py", "use": "@vercel/python" },
+    { "src": "public/**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/audit_start", "dest": "/api/audit_start.py" },
+    { "src": "/api/audit_poll",  "dest": "/api/audit_poll.py" },
+    { "src": "/api/audit_run",   "dest": "/api/audit_run.py" },
+    { "src": "/api/send_email",  "dest": "/api/send_email.py" },
+    { "src": "/(.*)", "dest": "/public/$1" }
+  ]
+}

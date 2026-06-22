@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Free SEO Audit Tool — AI Powered</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --red:#c0392b;--red2:#9b2b2b;--green:#1e8449;--warn:#b7770d;
+  --fail:#c0392b;--info:#1a5276;--text:#1c2b3a;--sub:#5d6d7e;
+  --lite:#95a5a6;--border:#dde1e7;--bg:#eef0f4;--white:#fff;
+  --sh:0 4px 24px rgba(0,0,0,.1);--sh2:0 8px 40px rgba(0,0,0,.14);
+  --r:10px;--r2:16px;--font:'Sora',sans-serif;--disp:'Fraunces',serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.hidden{display:none!important}
+button{font-family:var(--font);cursor:pointer}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+
+/* FORM */
+#page-form{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 16px;background:var(--bg)}
+.form-card{width:100%;max-width:568px;border-radius:var(--r2);overflow:hidden;box-shadow:var(--sh2);animation:scaleIn .45s ease}
+.form-top{background:linear-gradient(135deg,#c0392b 0%,#922b21 100%);padding:36px 38px 30px;color:#fff;position:relative;overflow:hidden}
+.form-top::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.07)}
+.form-top-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:4px 13px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:14px}
+.form-top h1{font-family:var(--disp);font-size:29px;font-weight:600;line-height:1.22;margin-bottom:10px;position:relative;z-index:1}
+.form-top p{font-size:12.5px;opacity:.85;line-height:1.7;position:relative;z-index:1}
+.form-body{background:#fff;padding:30px 38px}
+.flabel{display:block;font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--lite);margin-bottom:5px}
+.fgroup{margin-bottom:16px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+input[type=url],input[type=text],input[type=email]{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--r);font-family:var(--font);font-size:13.5px;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s;background:#fff}
+input:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(192,57,43,.1)}
+input.err{border-color:var(--fail)}
+.errmsg{font-size:11.5px;color:var(--fail);margin-top:4px;display:none}
+.btn-run{width:100%;background:linear-gradient(135deg,var(--red),#a83226);color:#fff;border:none;border-radius:var(--r);padding:14px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:4px;box-shadow:0 4px 16px rgba(192,57,43,.32);transition:transform .15s,box-shadow .15s}
+.btn-run:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(192,57,43,.42)}
+.btn-run:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.feats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:20px;padding-top:20px;border-top:1px solid var(--border)}
+.feat{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--sub)}
+.feat .ck{color:var(--green);font-weight:700}
+@media(max-width:480px){.frow{grid-template-columns:1fr}.form-top,.form-body{padding-left:22px;padding-right:22px}.feats{grid-template-columns:repeat(2,1fr)}}
+
+/* LOADING */
+#page-loading{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 16px;background:var(--bg)}
+.load-card{background:#fff;border-radius:var(--r2);padding:46px 38px;max-width:480px;width:100%;text-align:center;box-shadow:var(--sh2);animation:scaleIn .4s ease}
+.spin-wrap{position:relative;width:68px;height:68px;margin:0 auto 24px}
+.spin-outer{width:68px;height:68px;border:4px solid #eee;border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite;position:absolute}
+.spin-inner{width:42px;height:42px;border:3px solid transparent;border-top-color:rgba(192,57,43,.25);border-radius:50%;animation:spin .55s linear infinite reverse;position:absolute;top:13px;left:13px}
+.l-domain{font-size:15.5px;font-weight:600;margin-bottom:5px}
+.l-step{font-size:12.5px;color:var(--sub);margin-bottom:20px;min-height:19px}
+.pbar-wrap{background:#ebebeb;border-radius:10px;height:8px;overflow:hidden;margin-bottom:6px}
+.pbar-fill{height:100%;background:linear-gradient(90deg,var(--red),#e74c3c);border-radius:10px;transition:width .6s ease}
+.pbar-pct{font-size:11.5px;color:var(--lite);margin-bottom:20px}
+.steps-log{display:flex;flex-direction:column;gap:4px;max-height:170px;overflow:hidden;text-align:left}
+.slog{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--green);animation:slideIn .22s ease}
+
+/* ERROR */
+#page-error{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 16px;background:var(--bg)}
+.err-card{background:#fff;border-radius:var(--r2);padding:46px 38px;max-width:460px;width:100%;text-align:center;box-shadow:var(--sh2)}
+.err-icon{font-size:48px;margin-bottom:16px}
+.err-title{font-size:18px;font-weight:600;margin-bottom:10px;color:var(--fail)}
+.err-msg{font-size:13px;color:var(--sub);margin-bottom:24px;line-height:1.65}
+.btn-retry{background:linear-gradient(135deg,var(--red),#a83226);color:#fff;border:none;border-radius:var(--r);padding:12px 28px;font-size:13.5px;font-weight:600;cursor:pointer}
+
+/* REPORT */
+#page-report{background:var(--bg);padding:26px 14px;min-height:100vh}
+.rpt-wrap{max-width:900px;margin:0 auto}
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap}
+.toolbar-info{font-size:12.5px;color:var(--sub);display:flex;align-items:center;gap:6px}
+.tbtns{display:flex;gap:9px}
+.btn-p{background:linear-gradient(135deg,var(--red),#a83226);color:#fff;border:none;border-radius:var(--r);padding:9px 17px;font-family:var(--font);font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:6px;box-shadow:0 3px 12px rgba(192,57,43,.28);transition:transform .14s,box-shadow .14s;cursor:pointer}
+.btn-p:hover{transform:translateY(-1px)}
+.btn-g{background:#fff;color:var(--text);border:1.5px solid var(--border);border-radius:var(--r);padding:8px 15px;font-family:var(--font);font-size:12.5px;display:flex;align-items:center;gap:5px;transition:background .14s;cursor:pointer}
+.btn-g:hover{background:#f7f8f9}
+
+#rpt{background:#fff;border-radius:var(--r2);overflow:hidden;box-shadow:var(--sh2)}
+.rpt-hdr{background:linear-gradient(135deg,#c0392b 0%,#922b21 100%);padding:26px 34px;color:#fff;position:relative;overflow:hidden}
+.rpt-hdr::before{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.06)}
+.rpt-hdr-top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+.rpt-hdr h2{font-size:20px;font-weight:600;margin-bottom:3px;position:relative;z-index:1}
+.rpt-hdr-sub{font-size:12px;opacity:.8;position:relative;z-index:1}
+.rpt-hdr-desc{font-size:12.5px;opacity:.82;line-height:1.7;max-width:600px;position:relative;z-index:1}
+.hdr-brand{font-size:11px;opacity:.72;text-align:right;line-height:1.9}
+
+/* Summary */
+.summary{display:grid;grid-template-columns:220px 1fr;border-bottom:1px solid var(--border)}
+@media(max-width:600px){.summary{grid-template-columns:1fr}}
+.sum-left{padding:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border-right:1px solid var(--border)}
+.ov-lbl{font-size:13px;color:var(--sub);font-weight:500;text-align:center}
+.sum-right{padding:24px 28px}
+.sum-rt-title{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--lite);margin-bottom:14px}
+.cat-grades{display:flex;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.cat-g{display:flex;flex-direction:column;align-items:center;gap:5px}
+.cat-g-lbl{font-size:10px;color:var(--sub);text-align:center;max-width:62px;line-height:1.35}
+
+/* Sections */
+.sec{border-top:3px solid #f0f2f5}
+.sec-hdr{padding:14px 28px;display:flex;align-items:center;gap:15px}
+.sec-hdr.red{background:linear-gradient(90deg,#c0392b,#a93226)}
+.sec-hdr.dark{background:linear-gradient(90deg,#2c3e50,#34495e)}
+.sec-hdr.blue{background:linear-gradient(90deg,#1a5276,#1f618d)}
+.sec-hdr.green{background:linear-gradient(90deg,#1e8449,#27ae60)}
+.sec-hdr.purple{background:linear-gradient(90deg,#6c3483,#8e44ad)}
+.sec-hdr.teal{background:linear-gradient(90deg,#0e6655,#148f77)}
+.sec-hdr.orange{background:linear-gradient(90deg,#935116,#b7770d)}
+.sec-hdr-title{color:#fff;font-size:14.5px;font-weight:600}
+.sec-intro{display:flex;align-items:flex-start;gap:17px;padding:17px 28px;background:#fdf7f7;border-bottom:1px solid var(--border)}
+.sec-intro-txt h3{font-size:13.5px;font-weight:600;margin-bottom:3px}
+.sec-intro-txt p{font-size:12px;color:var(--sub);line-height:1.65}
+.sec-body{padding:0 28px}
+
+/* Checks */
+.crow{padding:13px 0;border-bottom:1px solid #f0f2f5}
+.crow:last-child{border-bottom:none}
+.crow-hdr{display:flex;align-items:flex-start;gap:9px}
+.cicon{width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;flex-shrink:0;margin-top:2px}
+.ci-p{background:var(--green);color:#fff}.ci-f{background:var(--fail);color:#fff}
+.ci-w{background:var(--warn);color:#fff}.ci-i{background:var(--info);color:#fff}
+.crow-title{font-size:13.5px;font-weight:500;flex:1}
+.crow-body{margin:8px 0 0 28px;background:#f8f9fb;border-left:3px solid var(--border);border-radius:0 7px 7px 0;padding:9px 13px;font-size:12px;color:var(--sub);line-height:1.65}
+.crow-val{margin:6px 0 0 28px;font-size:12px;background:#f8f9fb;border:1px solid var(--border);border-radius:7px;padding:7px 12px;font-family:'SF Mono','Fira Mono',monospace;word-break:break-all;color:var(--text)}
+
+/* SERP */
+.serp-box{border:1px solid var(--border);border-radius:9px;padding:13px 15px;margin:10px 0 0 28px;background:#fff}
+.serp-url{font-size:11px;color:#188038;margin-bottom:3px}
+.serp-title{font-size:16px;color:#1558d6;line-height:1.3;margin-bottom:4px}
+.serp-desc{font-size:12.5px;color:#3c4043;line-height:1.55}
+
+/* Gauges */
+.gauge-row{display:flex;gap:11px;flex-wrap:wrap;margin:12px 0 0 28px}
+.gauge{flex:1;min-width:100px;background:#f8f9fb;border:1px solid var(--border);border-radius:var(--r);padding:13px;text-align:center}
+.gauge-val{font-size:22px;font-weight:600}
+.gauge-lbl{font-size:10px;color:var(--sub);margin-top:4px;line-height:1.4}
+.gauge-tgt{font-size:9.5px;color:var(--lite);margin-top:2px}
+.gv-g{color:var(--green)}.gv-w{color:var(--warn)}.gv-b{color:var(--fail)}
+
+/* Tables */
+.rtbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.rtbl th{background:#f8f9fb;padding:8px 11px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--lite);border-bottom:1px solid var(--border);font-weight:600}
+.rtbl td{padding:9px 11px;border-bottom:1px solid #f0f2f5;color:var(--text)}
+.rtbl tr:last-child td{border-bottom:none}
+.pb-g{display:inline-block;background:#eafaf1;color:#1e8449;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:600}
+.pb-w{display:inline-block;background:#fef5e7;color:#b7770d;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:600}
+.pb-r{display:inline-block;background:#fdecea;color:#c0392b;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:600}
+
+/* Metric cards */
+.mgrid{display:grid;gap:10px;margin:12px 0 0 28px}
+.mcard{background:#f8f9fb;border:1px solid var(--border);border-radius:var(--r);padding:13px;text-align:center}
+.mval{font-size:24px;font-weight:600;color:var(--text)}
+.mv-g{color:var(--green)}.mv-w{color:var(--warn)}.mv-b{color:var(--fail)}
+.mlbl{font-size:10px;color:var(--lite);margin-top:4px;text-transform:uppercase;letter-spacing:.04em}
+
+/* Size bars */
+.sbar{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+.sbar-l{width:70px;font-size:12px;color:var(--sub)}
+.sbar-tr{flex:1;background:#ebebeb;border-radius:4px;height:7px;overflow:hidden}
+.sbar-fi{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--red),#e74c3c)}
+.sbar-v{width:52px;text-align:right;font-size:11.5px;color:var(--lite)}
+
+/* Compression */
+.ctbl{width:100%;font-size:12px;border-collapse:collapse}
+.ctbl td{padding:5px 2px;vertical-align:middle}
+.cbar-wrap{display:flex;align-items:center;gap:8px}
+.cbar-tr{flex:1;background:#ebebeb;border-radius:3px;height:5px;overflow:hidden}
+.cbar-fi{height:100%;border-radius:3px}
+
+/* Tech tags */
+.tech-wrap{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0 28px;padding-bottom:4px}
+.ttech{background:#f8f9fb;border:1px solid var(--border);border-radius:20px;padding:3px 12px;font-size:11.5px;color:var(--sub)}
+
+/* Social */
+.soc-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #f0f2f5}
+.soc-row:last-child{border-bottom:none}
+.soc-ic{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.soc-name{font-size:13px;font-weight:500}
+.soc-url{font-size:11.5px;color:var(--lite)}
+.soc-stat{font-size:11.5px;color:var(--green);font-weight:500;margin-top:2px}
+
+/* Stars */
+.stars{color:#f39c12;font-size:19px;letter-spacing:2px}
+
+/* Review bars */
+.rbar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.rbar-lbl{width:14px;font-size:11.5px;color:var(--sub);text-align:right}
+.rbar-tr{flex:1;background:#ebebeb;border-radius:3px;height:8px;overflow:hidden}
+.rbar-fi{height:100%;background:#f39c12;border-radius:3px}
+.rbar-n{width:28px;font-size:11px;color:var(--lite)}
+
+/* PSI circle */
+.psi-c{width:66px;height:66px;border-radius:50%;border:4px solid;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* Recommendations */
+.rec-item{margin:8px 0 0 28px;background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:10px 14px;font-size:12px;color:#5d4037;line-height:1.65}
+
+/* Footer */
+.rpt-footer{background:#f8f9fb;border-top:1px solid var(--border);padding:17px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.rft-l{font-size:12px;color:var(--sub)}
+.rft-l strong{color:var(--red)}
+.bottom-bar{display:flex;gap:10px;margin-top:14px}
+.bottom-bar .btn-p{flex:1;justify-content:center;padding:13px;font-size:13.5px}
+
+/* GBP card */
+.gbp-card{margin:10px 0 0 28px;background:#f8f9fb;border:1px solid var(--border);border-radius:var(--r);padding:13px 16px;font-size:12.5px}
+
+@media print{
+  body,#page-report{background:#fff!important;padding:0!important}
+  .toolbar,.bottom-bar{display:none!important}
+  .rpt-wrap{max-width:100%}
+  #rpt{box-shadow:none!important;border-radius:0!important}
+  .sec,.crow{page-break-inside:avoid}
+  .sec-hdr{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  .rpt-hdr{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  @page{margin:13mm;size:A4}
+}
+</style>
+</head>
+<body>
+
+<!-- FORM -->
+<div id="page-form">
+<div class="form-card">
+  <div class="form-top">
+    <div class="form-top-badge">✦ AI-Powered SEO Audit</div>
+    <h1>Full Website SEO<br/>Audit Report</h1>
+    <p>Comprehensive AI audit covering On-Page SEO, GEO/AI Visibility, Core Web Vitals, Performance, Social, Local SEO, Technology — graded A+ to F.</p>
+  </div>
+  <div class="form-body">
+    <div class="fgroup">
+      <label class="flabel">Website URL</label>
+      <input type="url" id="f-url" placeholder="https://yourwebsite.com"/>
+      <div class="errmsg" id="e-url">Enter a valid URL starting with https://</div>
+    </div>
+    <div class="frow">
+      <div class="fgroup">
+        <label class="flabel">Your Name</label>
+        <input type="text" id="f-name" placeholder="Jane Smith"/>
+        <div class="errmsg" id="e-name">Name is required</div>
+      </div>
+      <div class="fgroup">
+        <label class="flabel">Email Address</label>
+        <input type="email" id="f-email" placeholder="jane@company.com"/>
+        <div class="errmsg" id="e-email">Enter a valid email</div>
+      </div>
+    </div>
+    <button class="btn-run" id="btn-start">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      Run Free SEO Audit
+    </button>
+    <div class="feats">
+      <div class="feat"><span class="ck">✓</span> On-Page SEO</div>
+      <div class="feat"><span class="ck">✓</span> GEO / AI Visibility</div>
+      <div class="feat"><span class="ck">✓</span> Core Web Vitals</div>
+      <div class="feat"><span class="ck">✓</span> Social Profiles</div>
+      <div class="feat"><span class="ck">✓</span> Local SEO + GBP</div>
+      <div class="feat"><span class="ck">✓</span> PDF Export</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- LOADING -->
+<div id="page-loading" class="hidden">
+<div class="load-card">
+  <div class="spin-wrap"><div class="spin-outer"></div><div class="spin-inner"></div></div>
+  <div class="l-domain" id="l-dom">Analysing website...</div>
+  <div class="l-step" id="l-step">Initialising AI audit engine...</div>
+  <div class="pbar-wrap"><div class="pbar-fill" id="pbar" style="width:0%"></div></div>
+  <div class="pbar-pct" id="l-pct">0% complete</div>
+  <div class="steps-log" id="l-log"></div>
+</div>
+</div>
+
+<!-- ERROR -->
+<div id="page-error" class="hidden">
+<div class="err-card">
+  <div class="err-icon">⚠️</div>
+  <div class="err-title">Audit Could Not Complete</div>
+  <div class="err-msg" id="err-msg">There was an issue. Please try again.</div>
+  <button class="btn-retry" id="btn-retry">Try Again</button>
+</div>
+</div>
+
+<!-- REPORT -->
+<div id="page-report" class="hidden">
+<div class="rpt-wrap">
+  <div class="toolbar">
+    <div class="toolbar-info">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <span id="tb-url"></span>
+    </div>
+    <div class="tbtns">
+      <button class="btn-p" id="btn-print">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print / PDF
+      </button>
+      <button class="btn-g" id="btn-new">↩ New Audit</button>
+    </div>
+  </div>
+
+  <div id="rpt">
+    <!-- Header -->
+    <div class="rpt-hdr">
+      <div class="rpt-hdr-top">
+        <div>
+          <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:3px 11px;font-size:10.5px;font-weight:600;margin-bottom:10px">✦ AI-Powered Analysis</div>
+          <h2 id="r-title">Website SEO Report</h2>
+          <div class="rpt-hdr-sub" id="r-sub"></div>
+        </div>
+        <div class="hdr-brand"><div style="font-weight:600;font-size:13px">SEO Audit Tool</div><div id="r-date"></div></div>
+      </div>
+      <div class="rpt-hdr-desc" id="r-desc"></div>
+    </div>
+
+    <!-- Summary -->
+    <div class="summary">
+      <div class="sum-left">
+        <div class="ov-lbl">Overall Score</div>
+        <svg width="130" height="130" viewBox="0 0 130 130">
+          <circle cx="65" cy="65" r="58" fill="none" stroke="#eee" stroke-width="8"/>
+          <circle id="ov-arc" cx="65" cy="65" r="58" fill="none" stroke-width="8" stroke-linecap="round" transform="rotate(-90 65 65)" stroke-dasharray="364" stroke-dashoffset="200"/>
+          <text id="ov-g" x="65" y="70" text-anchor="middle" font-family="Sora,sans-serif" font-size="26" font-weight="700" fill="#1e8449">—</text>
+        </svg>
+        <div class="ov-lbl" id="ov-lbl">—</div>
+      </div>
+      <div class="sum-right">
+        <div class="sum-rt-title">Category Breakdown</div>
+        <div class="cat-grades" id="cat-grades"></div>
+        <canvas id="radar" width="230" height="165" style="max-width:100%"></canvas>
+      </div>
+    </div>
+
+    <!-- ── ON-PAGE SEO ── -->
+    <div class="sec">
+      <div class="sec-hdr red"><div id="cg-op"></div><div class="sec-hdr-title">On-Page SEO Results</div></div>
+      <div class="sec-intro"><div id="si-op"></div>
+        <div class="sec-intro-txt"><h3 id="op-h">On-Page SEO Analysis</h3><p id="op-p">Analysing title tags, meta descriptions, headings, keywords, and content.</p></div>
+      </div>
+      <div class="sec-body">
+        <!-- SERP Preview -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-i">i</div><div class="crow-title">SERP Snippet Preview</div></div>
+          <div class="crow-body" style="background:transparent;border:none;padding-left:0;font-size:12px;color:var(--sub)">This illustrates how your page may appear in Google Search Results.</div>
+          <div class="serp-box"><div class="serp-url" id="serp-url"></div><div class="serp-title" id="serp-title"></div><div class="serp-desc" id="serp-desc"></div></div>
+        </div>
+        <!-- Title Tag -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-tt">!</div><div class="crow-title">Title Tag — <span id="tt-st"></span></div></div>
+          <div class="crow-val" id="tt-val"></div><div class="crow-body" id="tt-body"></div></div>
+        <!-- Meta Description -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-meta">✓</div><div class="crow-title">Meta Description — <span id="meta-st"></span></div></div>
+          <div class="crow-val" id="meta-val"></div><div class="crow-body" id="meta-body"></div></div>
+        <!-- Hreflang -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-hreflang">i</div><div class="crow-title">Hreflang Usage — <span id="hreflang-st"></span></div></div>
+          <div class="crow-body" id="hreflang-body"></div></div>
+        <!-- Language -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-lang">✓</div><div class="crow-title">Language — <span id="lang-st"></span></div></div>
+          <div class="crow-val" id="lang-v"></div></div>
+        <!-- H1 -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-h1">✓</div><div class="crow-title">H1 Header Tag — <span id="h1-st"></span></div></div>
+          <div style="margin:10px 0 0 28px"><table class="rtbl"><thead><tr><th>Tag</th><th>Content</th></tr></thead><tbody id="h1-body"></tbody></table></div></div>
+        <!-- H2-H6 -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-p">✓</div><div class="crow-title">H2–H6 Header Tags — multiple levels in use</div></div>
+          <div style="margin:10px 0 0 28px;display:flex;gap:10px;flex-wrap:wrap" id="hfreq-grid"></div></div>
+        <!-- Keywords -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-p">✓</div><div class="crow-title">Keyword Consistency</div></div>
+          <div style="margin:10px 0 0 28px"><table class="rtbl"><thead><tr><th>Keyword / Phrase</th><th>Title</th><th>Meta</th><th>Headings</th><th>Page Freq.</th></tr></thead><tbody id="kw-body"></tbody></table></div></div>
+        <!-- Word Count -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-wc">✓</div><div class="crow-title">Amount of Content — <span id="wc-st"></span></div></div>
+          <div class="crow-body" id="wc-body"></div></div>
+        <!-- Image Alt -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-alt">✓</div><div class="crow-title">Image Alt Attributes — <span id="alt-st"></span></div></div>
+          <div class="crow-body" id="alt-body"></div></div>
+        <!-- Canonical -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-canon">✓</div><div class="crow-title">Canonical Tag — <span id="canon-st"></span></div></div><div class="crow-val" id="canon-v"></div></div>
+        <!-- Noindex -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-noindex">✓</div><div class="crow-title">Noindex Tag Test — <span id="noindex-st"></span></div></div>
+          <div class="crow-body" id="noindex-body"></div></div>
+        <!-- HTTPS Redirect -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-https">✓</div><div class="crow-title">HTTPS Redirect — <span id="https-st"></span></div></div>
+          <div class="crow-body" id="https-body"></div></div>
+        <!-- Robots -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-robots">✓</div><div class="crow-title">Robots.txt — <span id="robots-st"></span></div></div><div class="crow-val" id="robots-v"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-robblock">✓</div><div class="crow-title">Blocked by Robots.txt — <span id="robblock-st"></span></div></div></div>
+        <!-- Sitemap -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-sitemap">✓</div><div class="crow-title">XML Sitemap — <span id="sitemap-st"></span></div></div><div class="crow-val" id="sitemap-v"></div></div>
+        <!-- Analytics -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-analytics">✓</div><div class="crow-title">Analytics — <span id="analytics-st"></span></div></div>
+          <div class="crow-val" id="analytics-v"></div></div>
+        <!-- Schema -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-schema">✓</div><div class="crow-title">Schema.org Structured Data — <span id="schema-st"></span></div></div>
+          <div class="crow-body" id="schema-body"></div></div>
+        <!-- Flash / AMP -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-p">✓</div><div class="crow-title">Flash — no Flash content detected</div></div></div>
+        <div class="crow" style="border-bottom:none"><div class="crow-hdr"><div class="cicon ci-i">i</div><div class="crow-title">AMP — <span id="amp-st"></span></div></div>
+          <div class="crow-body" id="amp-body"></div></div>
+      </div>
+    </div>
+
+    <!-- ── GEO / AI ── -->
+    <div class="sec">
+      <div class="sec-hdr green"><div id="cg-geo"></div><div class="sec-hdr-title">Generative Engine Optimization (GEO)</div></div>
+      <div class="sec-intro"><div id="si-geo"></div>
+        <div class="sec-intro-txt"><h3 id="geo-h">GEO / AI Visibility</h3><p id="geo-p">Evaluating how well LLMs and AI search engines can crawl and understand your content.</p></div>
+      </div>
+      <div class="sec-body">
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-render">✓</div><div class="crow-title">Rendered Content (LLM Readability) — <span id="render-st"></span></div></div>
+          <div class="crow-body" id="render-body"></div>
+          <div style="margin:10px 0 0 28px;display:inline-block;background:#f8f9fb;border:1px solid var(--border);border-radius:var(--r);padding:10px 18px;font-size:13px">
+            Rendering Percentage: <strong id="render-pct">—</strong>
+          </div>
+        </div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-llms">✓</div><div class="crow-title">llms.txt — <span id="llms-st"></span></div></div>
+          <div class="crow-val" id="llms-url"></div><div class="crow-body" id="llms-body"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-i">i</div><div class="crow-title">Traffic From Search Rankings</div></div>
+          <div class="mgrid" style="grid-template-columns:repeat(3,1fr)" id="traffic-grid"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-i">i</div><div class="crow-title">Top Organic Keyword Rankings</div></div>
+          <div style="margin:10px 0 0 28px"><table class="rtbl"><thead><tr><th>Keyword</th><th>Country</th><th>Position</th><th>Searches/mo</th><th>Est. Traffic</th></tr></thead><tbody id="kw-rank"></tbody></table></div></div>
+        <div class="crow" style="border-bottom:none"><div class="crow-hdr"><div class="cicon ci-i">i</div><div class="crow-title">Organic Keyword Positions</div></div>
+          <div style="margin:10px 0 0 28px"><table class="rtbl"><thead><tr><th>Position Range</th><th>Keywords</th></tr></thead><tbody id="kw-pos"></tbody></table></div></div>
+      </div>
+    </div>
+
+    <!-- ── USABILITY ── -->
+    <div class="sec">
+      <div class="sec-hdr red"><div id="cg-us"></div><div class="sec-hdr-title">Usability</div></div>
+      <div class="sec-intro"><div id="si-us"></div>
+        <div class="sec-intro-txt"><h3 id="us-h">Usability Analysis</h3><p id="us-p">Usability issues affect bounce rates — which indirectly impact search rankings.</p></div>
+      </div>
+      <div class="sec-body">
+        <!-- CWV -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-cwv">!</div><div class="crow-title">Google Core Web Vitals — <span id="cwv-st"></span></div></div>
+          <div class="crow-body" id="cwv-adv"></div>
+          <div class="gauge-row">
+            <div class="gauge"><div class="gauge-val" id="cwv-lcp">—</div><div class="gauge-lbl">Largest Contentful Paint</div><div class="gauge-tgt">Target ≤ 2.5s</div></div>
+            <div class="gauge"><div class="gauge-val" id="cwv-inp">—</div><div class="gauge-lbl">Interaction to Next Paint</div><div class="gauge-tgt">Target ≤ 200ms</div></div>
+            <div class="gauge"><div class="gauge-val" id="cwv-cls">—</div><div class="gauge-lbl">Cumulative Layout Shift</div><div class="gauge-tgt">Target ≤ 0.1</div></div>
+          </div>
+        </div>
+        <!-- Mobile PSI -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-mob">!</div><div class="crow-title">Google PageSpeed — Mobile — <span id="mob-lbl" style="color:var(--fail)"></span></div></div>
+          <div style="margin:12px 0 0 28px;display:flex;align-items:flex-start;gap:15px;flex-wrap:wrap">
+            <div class="psi-c" id="mob-circle"><span style="font-size:21px;font-weight:700" id="mob-score">—</span></div>
+            <div style="flex:1;min-width:190px">
+              <table class="rtbl"><thead><tr><th>Lab Data</th><th>Value</th></tr></thead><tbody id="mob-tbl"></tbody></table>
+              <div style="margin-top:11px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--lite);margin-bottom:5px">Opportunities to Improve</div>
+              <table class="rtbl"><thead><tr><th>Opportunity</th><th>Est. Savings</th></tr></thead><tbody id="mob-opp"></tbody></table>
+            </div>
+          </div>
+        </div>
+        <!-- Desktop PSI -->
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-desk">!</div><div class="crow-title">Google PageSpeed — Desktop — <span id="desk-lbl" style="color:var(--warn)"></span></div></div>
+          <div style="margin:12px 0 0 28px;display:flex;align-items:flex-start;gap:15px;flex-wrap:wrap">
+            <div class="psi-c" id="desk-circle"><span style="font-size:21px;font-weight:700" id="desk-score">—</span></div>
+            <div style="flex:1;min-width:190px">
+              <table class="rtbl"><thead><tr><th>Lab Data</th><th>Value</th></tr></thead><tbody id="desk-tbl"></tbody></table>
+              <div style="margin-top:11px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--lite);margin-bottom:5px">Opportunities</div>
+              <table class="rtbl"><thead><tr><th>Opportunity</th><th>Est. Savings</th></tr></thead><tbody id="desk-opp"></tbody></table>
+            </div>
+          </div>
+        </div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-p">✓</div><div class="crow-title">Mobile Viewport — <span id="viewport-st"></span></div></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-iframe">!</div><div class="crow-title">iFrames — <span id="iframe-st"></span></div></div>
+          <div class="crow-body" id="iframe-body"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-p">✓</div><div class="crow-title">Legible Font Sizes — <span id="font-st"></span></div></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-p">✓</div><div class="crow-title">Tap Target Sizing — <span id="tap-st"></span></div></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-fav">✓</div><div class="crow-title">Favicon — <span id="fav-st"></span></div></div></div>
+        <div class="crow" style="border-bottom:none"><div class="crow-hdr"><div class="cicon" id="ci-email">✓</div><div class="crow-title">Email Privacy — <span id="email-st"></span></div></div></div>
+      </div>
+    </div>
+
+    <!-- ── PERFORMANCE ── -->
+    <div class="sec">
+      <div class="sec-hdr blue"><div id="cg-pf"></div><div class="sec-hdr-title">Performance Results</div></div>
+      <div class="sec-intro"><div id="si-pf"></div>
+        <div class="sec-intro-txt"><h3 id="pf-h">Performance Analysis</h3><p id="pf-p">Page speed, download size, compression, and resource loading.</p></div>
+      </div>
+      <div class="sec-body">
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-spd">✓</div><div class="crow-title">Website Load Speed — <span id="spd-st"></span></div></div>
+          <div class="gauge-row">
+            <div class="gauge"><div class="gauge-val gv-g" id="sp-srv">—</div><div class="gauge-lbl">Server Response</div></div>
+            <div class="gauge"><div class="gauge-val gv-w" id="sp-cnt">—</div><div class="gauge-lbl">Content Loaded</div></div>
+            <div class="gauge"><div class="gauge-val gv-w" id="sp-scr">—</div><div class="gauge-lbl">Scripts Complete</div></div>
+          </div>
+        </div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-sz">✓</div><div class="crow-title">Website Download Size — <span id="sz-st"></span></div></div>
+          <div style="margin:12px 0 0 28px">
+            <div style="display:flex;align-items:center;gap:11px;margin-bottom:13px">
+              <div style="width:58px;height:58px;border-radius:50%;border:4px solid var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-size:12px;font-weight:600;color:var(--green)" id="sz-tot">—</span></div>
+              <span style="font-size:12.5px;color:var(--sub)">Total download size</span>
+            </div>
+            <div id="sz-bars"></div>
+          </div>
+        </div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-comp">✓</div><div class="crow-title">Compression (Gzip / Brotli) — <span id="comp-st"></span></div></div>
+          <div style="margin:12px 0 0 28px">
+            <div style="display:flex;align-items:center;gap:11px;margin-bottom:11px">
+              <div style="width:52px;height:52px;border-radius:50%;border:4px solid var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-size:12px;font-weight:600;color:var(--green)" id="comp-r">—</span></div>
+              <span style="font-size:12.5px;color:var(--sub)">Overall compression rate</span>
+            </div>
+            <table class="ctbl" id="comp-tbl"></table>
+          </div>
+        </div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-http2">✓</div><div class="crow-title">HTTP/2 — <span id="http2-st"></span></div></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-imgopt">✓</div><div class="crow-title">Optimise Images — <span id="imgopt-st"></span></div></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-minify">!</div><div class="crow-title">Minification — <span id="minify-st"></span></div></div>
+          <div class="crow-body" id="minify-body"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-jserr">✕</div><div class="crow-title">JavaScript Errors — <span id="jserr-st"></span></div></div>
+          <div class="crow-val" id="js-err"></div>
+          <div class="crow-body" id="jserr-body"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-inline">!</div><div class="crow-title">Inline Styles — <span id="inline-st"></span></div></div>
+          <div class="crow-body" id="inline-body"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-p">✓</div><div class="crow-title">Deprecated HTML — <span id="dep-st"></span></div></div></div>
+        <div class="crow" style="border-bottom:none"><div class="crow-hdr"><div class="cicon ci-i">i</div><div class="crow-title">Resources Breakdown — total files loaded</div></div>
+          <div class="mgrid" style="grid-template-columns:repeat(6,1fr)" id="res-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SOCIAL ── -->
+    <div class="sec">
+      <div class="sec-hdr purple"><div class="sec-hdr-title">Social Results</div></div>
+      <div class="sec-body" style="padding-top:5px">
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-i">i</div><div class="crow-title">Social Profile Links</div></div>
+          <div id="soc-rows" style="margin-top:8px"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-fbpx">✓</div><div class="crow-title">Facebook Pixel — <span id="fbpx-st"></span></div></div>
+          <div class="crow-val" id="fb-px"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-p">✓</div><div class="crow-title">Facebook Open Graph Tags</div></div>
+          <div style="margin:10px 0 0 28px"><table class="rtbl" id="og-tbl"></table></div></div>
+        <div class="crow" style="border-bottom:none"><div class="crow-hdr"><div class="cicon" id="ci-twcard">✓</div><div class="crow-title">X / Twitter Card Tags — <span id="twcard-st"></span></div></div>
+          <div style="margin:10px 0 0 28px"><table class="rtbl" id="tw-tbl"></table></div></div>
+      </div>
+    </div>
+
+    <!-- ── LOCAL SEO ── -->
+    <div class="sec">
+      <div class="sec-hdr teal"><div class="sec-hdr-title">Local SEO</div></div>
+      <div class="sec-body">
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-addr">✓</div><div class="crow-title">Address &amp; Phone on Website — <span id="addr-st"></span></div></div>
+          <div style="margin:10px 0 0 28px;background:#f8f9fb;border-radius:var(--r);padding:12px 16px;font-size:12.5px" id="loc-c"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-lschema">✓</div><div class="crow-title">Local Business Schema — <span id="lschema-st"></span></div></div>
+          <div class="crow-val" id="lschema-v"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-gbp">✓</div><div class="crow-title">Google Business Profile — <span id="gbp-st"></span></div></div>
+          <div class="gbp-card" id="gbp-card"></div></div>
+        <div class="crow" style="border-bottom:none"><div class="crow-hdr"><div class="cicon" id="ci-rev">✓</div><div class="crow-title">Google Reviews — <span id="rev-st"></span></div></div>
+          <div style="margin:12px 0 0 28px;display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="font-size:34px;font-weight:700" id="rev-r">—</div>
+              <div>
+                <div class="stars" id="rev-s">☆☆☆☆☆</div>
+                <div style="font-size:13px;color:var(--sub)" id="rev-c">— reviews</div>
+              </div>
+            </div>
+            <div id="rev-bars" style="flex:1;min-width:160px;margin-top:4px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TECHNOLOGY ── -->
+    <div class="sec">
+      <div class="sec-hdr dark"><div class="sec-hdr-title">Technology Results</div></div>
+      <div class="sec-body">
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-i">i</div><div class="crow-title">Technology List</div></div>
+          <div style="margin:10px 0 0 28px"><table class="rtbl" id="tech-tbl"><thead><tr><th>Technology</th><th>Version</th></tr></thead><tbody id="tech-body"></tbody></table></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-dmarc">✕</div><div class="crow-title">DMARC Record — <span id="dmarc-st"></span></div></div>
+          <div class="crow-body" id="dmarc-body"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon" id="ci-spf">✓</div><div class="crow-title">SPF Record — <span id="spf-st"></span></div></div>
+          <div class="crow-val" id="spf-v"></div></div>
+        <div class="crow"><div class="crow-hdr"><div class="cicon ci-i">i</div><div class="crow-title">Server Information</div></div>
+          <div style="margin:10px 0 0 28px;display:flex;gap:10px;flex-wrap:wrap" id="srv-info"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── RECOMMENDATIONS ── -->
+    <div class="sec">
+      <div class="sec-hdr orange"><div class="sec-hdr-title">🎯 Priority Recommendations</div></div>
+      <div class="sec-body" style="padding-top:14px;padding-bottom:14px" id="recs-body"></div>
+    </div>
+
+    <div class="rpt-footer">
+      <div class="rft-l">SEO Audit for <strong id="f-dom"></strong> · Powered by <strong>Claude AI</strong></div>
+      <div style="font-size:11.5px;color:var(--lite)" id="f-date"></div>
+    </div>
+  </div><!-- /#rpt -->
+
+  <div class="bottom-bar">
+    <button class="btn-p" id="btn-print2">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Print / Save Full PDF Report
+    </button>
+    <button class="btn-g" id="btn-new2">↩ New Audit</button>
+  </div>
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const show=id=>$(id).classList.remove('hidden');
+const hide=id=>$(id).classList.add('hidden');
+const GRADES=['A+','A','A-','B+','B','B-','C+','C','C-','D+','D','D-','F'];
+function GP(g){const i=GRADES.indexOf(g);return i<0?.5:1-(i/GRADES.length)}
+function GC(g){const p=GP(g);return p>.75?'#1e8449':p>.5?'#b7770d':p>.3?'#e67e22':'#c0392b'}
+function svgC(grade,sz){
+  const s=sz||50,r=s/2-5,circ=2*Math.PI*r,c=GC(grade),fs=grade.length>2?s*.26:s*.32;
+  return`<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}">
+    <circle cx="${s/2}" cy="${s/2}" r="${r}" fill="none" stroke="#eee" stroke-width="${s*.07}"/>
+    <circle cx="${s/2}" cy="${s/2}" r="${r}" fill="none" stroke="${c}" stroke-width="${s*.07}"
+      stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${(circ*(1-GP(grade))).toFixed(1)}"
+      stroke-linecap="round" transform="rotate(-90 ${s/2} ${s/2})"/>
+    <text x="${s/2}" y="${s/2+fs*.38}" text-anchor="middle" font-family="Sora,sans-serif"
+      font-size="${fs}" font-weight="700" fill="${c}">${grade}</text></svg>`;
+}
+function tick(v){return v?'<span style="color:var(--green);font-weight:700">✓</span>':'<span style="color:#ccc">—</span>'}
+function si(id,type){const el=$(id);if(!el)return;el.className='cicon ci-'+type;el.textContent={p:'✓',f:'✕',w:'!',i:'i'}[type]||'i'}
+function gradeTxt(g){return({'A+':'excellent','A':'excellent','A-':'very good','B+':'good','B':'average','B-':'below average','C+':'needs work','C':'needs work','C-':'poor','D':'significant issues','D-':'critical issues','F':'critical issues'})[g]||'see report'}
+
+function drawRadar(cats){
+  const cv=$('radar'),ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height,cx=W/2,cy=H/2+8,R=60;
+  ctx.clearRect(0,0,W,H);
+  const labels=cats.map(c=>c.lbl),vals=cats.map(c=>GP(c.grade));
+  const n=vals.length,angles=vals.map((_,i)=>(i/n)*2*Math.PI-Math.PI/2);
+  for(let lv=1;lv<=4;lv++){ctx.beginPath();angles.forEach((a,i)=>{const rr=R*(lv/4);i===0?ctx.moveTo(cx+rr*Math.cos(a),cy+rr*Math.sin(a)):ctx.lineTo(cx+rr*Math.cos(a),cy+rr*Math.sin(a))});ctx.closePath();ctx.strokeStyle='#e8ecf0';ctx.lineWidth=1;ctx.stroke()}
+  angles.forEach(a=>{ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+R*Math.cos(a),cy+R*Math.sin(a));ctx.strokeStyle='#dde3ea';ctx.lineWidth=1;ctx.stroke()});
+  ctx.beginPath();vals.forEach((v,i)=>{const a=angles[i],rr=R*v;i===0?ctx.moveTo(cx+rr*Math.cos(a),cy+rr*Math.sin(a)):ctx.lineTo(cx+rr*Math.cos(a),cy+rr*Math.sin(a))});
+  ctx.closePath();ctx.fillStyle='rgba(192,57,43,.14)';ctx.fill();ctx.strokeStyle='#c0392b';ctx.lineWidth=2.5;ctx.stroke();
+  vals.forEach((v,i)=>{const a=angles[i],rr=R*v;ctx.beginPath();ctx.arc(cx+rr*Math.cos(a),cy+rr*Math.sin(a),3.5,0,2*Math.PI);ctx.fillStyle='#c0392b';ctx.fill()});
+  ctx.font='600 10px Sora,sans-serif';ctx.fillStyle='#95a5a6';ctx.textAlign='center';
+  angles.forEach((a,i)=>{const lx=cx+(R+22)*Math.cos(a),ly=cy+(R+22)*Math.sin(a);ctx.fillText(labels[i],lx,ly+4)});
+}
+
+function buildReport(D,name,email){
+  const date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  $('r-date').textContent='SEO Audit Report · '+date;
+  $('r-title').textContent='Website Report for '+D.domain;
+  $('r-sub').textContent='Prepared for '+name+' · '+email;
+  $('r-desc').textContent=D.overall?.summary||'AI-powered comprehensive SEO analysis.';
+  $('tb-url').textContent='https://'+D.domain;
+  $('f-dom').textContent=D.domain;
+  $('f-date').textContent=date;
+
+  // Overall grade
+  const og=D.overall?.grade||'B',oc=GC(og),r=58,circ=2*Math.PI*r;
+  $('ov-arc').setAttribute('stroke',oc);
+  $('ov-arc').setAttribute('stroke-dasharray',circ.toFixed(1));
+  $('ov-arc').setAttribute('stroke-dashoffset',(circ*(1-GP(og))).toFixed(1));
+  $('ov-g').setAttribute('fill',oc);$('ov-g').textContent=og;
+  $('ov-lbl').textContent=gradeTxt(og).charAt(0).toUpperCase()+gradeTxt(og).slice(1);
+
+  // Category grades
+  const cats=D.cats||[];
+  $('cat-grades').innerHTML=cats.map(c=>`<div class="cat-g">${svgC(c.grade,57)}<div class="cat-g-lbl">${c.lbl}</div></div>`).join('');
+  cats.forEach(c=>{
+    const e=$('cg-'+c.k);if(e)e.innerHTML=svgC(c.grade,50);
+    const s=$('si-'+c.k);if(s)s.innerHTML=svgC(c.grade,67);
+  });
+  drawRadar(cats);
+
+  // ── ON-PAGE ──
+  const op=D.op||{};
+  const opG=cats.find(c=>c.k==='op')?.grade||'B';
+  $('op-h').textContent=GP(opG)>.66?'Your On-Page SEO is very good!':'Your On-Page SEO needs attention';
+  $('op-p').textContent='Analysis of title tags, meta descriptions, headings, keywords, and content structure for '+D.domain;
+
+  $('serp-url').textContent='https://'+D.domain;
+  $('serp-title').textContent=op.serpTitle||(op.title?.t||'').substring(0,57);
+  $('serp-desc').textContent=op.serpDesc||(op.meta?.t||'').substring(0,155)+'...';
+
+  const ttOk=op.title?.ok!==false&&op.title?.len>=45&&op.title?.len<=65;
+  si('ci-tt',ttOk?'p':op.title?.len>0?'w':'f');
+  $('tt-st').textContent=(ttOk?'optimal':'adjust needed')+' — '+(op.title?.len||0)+' characters';
+  $('tt-val').textContent=op.title?.t||'Not found';
+  $('tt-body').textContent=op.titleAdvice||(ttOk?'Title length is optimal (50–60 chars).':'Shorten title to 50–60 characters for best SERP display.');
+
+  const mtOk=op.meta?.ok!==false&&op.meta?.len>=120&&op.meta?.len<=165;
+  si('ci-meta',mtOk?'p':op.meta?.len>0?'w':'f');
+  $('meta-st').textContent=(mtOk?'optimal':'adjust needed')+' — '+(op.meta?.len||0)+' characters';
+  $('meta-val').textContent=op.meta?.t||'Not found';
+  $('meta-body').textContent=op.metaAdvice||(mtOk?'Meta description is at optimal length.':'Adjust to 120–160 characters.');
+
+  // Hreflang
+  si('ci-hreflang',op.hreflang?'p':'i');
+  $('hreflang-st').textContent=op.hreflang?'in use':'not in use';
+  $('hreflang-body').textContent=op.hreflangDesc||'No hreflang tags found. Add if targeting multiple countries or languages.';
+
+  // Language
+  si('ci-lang',op.langOk?'p':'w');
+  $('lang-st').textContent=op.langOk?'using lang attribute':'lang attribute missing';
+  $('lang-v').textContent=op.lang?'Declared: '+op.lang:'Not set';
+
+  // H1
+  const h1Ok=(op.h1?.length||0)===1;
+  si('ci-h1',h1Ok?'p':op.h1?.length>1?'w':'f');
+  $('h1-st').textContent=h1Ok?'one H1 found':op.h1?.length>1?'multiple H1 tags':'H1 missing';
+  $('h1-body').innerHTML=(op.h1||[{tag:'H1',v:'Not found'}]).map(h=>`<tr><td><strong>${h.tag}</strong></td><td>${h.v}</td></tr>`).join('');
+
+  // H freq
+  $('hfreq-grid').innerHTML=(op.hfreq||[]).filter(h=>h.n>0).map(h=>`<div style="background:#f8f9fb;border:1px solid var(--border);border-radius:var(--r);padding:9px 16px;text-align:center;min-width:70px"><div style="font-size:21px;font-weight:700;color:var(--red)">${h.n}</div><div style="font-size:10px;color:var(--lite)">${h.t} Tags</div></div>`).join('');
+
+  // Keywords
+  $('kw-body').innerHTML=(op.kws||[]).map(k=>`<tr><td><strong>${k.p}</strong></td><td style="text-align:center">${tick(k.ti)}</td><td style="text-align:center">${tick(k.me)}</td><td style="text-align:center">${tick(k.hd)}</td><td style="text-align:center;font-weight:600">${k.f||'—'}</td></tr>`).join('');
+
+  // Word count
+  const wc=op.wc||0,wcOk=op.wcOk!==false&&wc>=500;
+  si('ci-wc',wcOk?'p':'w');
+  $('wc-st').textContent=wc.toLocaleString()+' words — '+(wcOk?'good level of content':'below recommended minimum');
+  $('wc-body').textContent='Word Count: '+wc.toLocaleString()+'. '+(wcOk?'Sufficient content to aid ranking potential.':'Add more content — aim for at least 500 words on key pages.');
+
+  // Image alt
+  si('ci-alt',op.imgAlt?'p':'w');
+  $('alt-st').textContent=op.imgAlt?'all images have alt text':'some images missing alt text';
+  $('alt-body').textContent=op.imgAltDesc||'';
+
+  // Canonical
+  si('ci-canon',op.canonOk?'p':'w');
+  $('canon-st').textContent=op.canonOk?'using canonical tag':'canonical tag missing';
+  $('canon-v').textContent=op.canon||'Not detected';
+
+  // Noindex
+  si('ci-noindex',op.noindexOk?'p':'f');
+  $('noindex-st').textContent=op.noindex?'noindex tag detected — page will not rank!':'no noindex tag — page is indexable';
+  $('noindex-body').textContent=op.noindex?'Remove the noindex tag immediately if you want this page to rank in search engines.':'Your page is not blocking search engines.';
+
+  // HTTPS redirect
+  si('ci-https',op.httpsRedir?'p':'f');
+  $('https-st').textContent=op.httpsRedir?'redirects to HTTPS':'not redirecting to HTTPS';
+  $('https-body').textContent=op.httpsRedir?'Your page successfully redirects to a HTTPS SSL secure version.':'Configure your server to redirect all HTTP traffic to HTTPS.';
+
+  // Robots
+  si('ci-robots',op.robotsOk?'p':'f');
+  $('robots-st').textContent=op.robotsOk?'robots.txt found':'robots.txt missing';
+  $('robots-v').textContent=op.robots||'Not found';
+  si('ci-robblock',!op.robotsBlocked?'p':'f');
+  $('robblock-st').textContent=op.robotsBlocked?'page is BLOCKED by robots.txt!':'page is not blocked by robots.txt';
+
+  // Sitemap
+  si('ci-sitemap',op.sitemapOk?'p':'f');
+  $('sitemap-st').textContent=op.sitemapOk?'XML sitemap found':'sitemap missing';
+  $('sitemap-v').textContent=op.sitemap||'Not found';
+
+  // Analytics
+  si('ci-analytics',op.analytics?'p':'w');
+  $('analytics-st').textContent=op.analytics?'analytics tool detected':'no analytics detected';
+  $('analytics-v').textContent=(op.analyticsTools||[]).join(', ')||'None detected';
+
+  // Schema
+  si('ci-schema',op.schema?'p':'w');
+  $('schema-st').textContent=op.schema?'structured data detected':'no structured data found';
+  $('schema-body').textContent=op.schema?'Using '+(op.schemaTypes||[]).join(', ')+' schema markup.':'Add Schema.org markup to improve how search engines and AI understand your content.';
+
+  // AMP
+  $('amp-st').textContent=op.amp?'AMP enabled':'AMP not enabled';
+  $('amp-body').textContent=op.ampDesc||'AMP is optional but can help mobile performance in some cases.';
+
+  // ── GEO ──
+  const geo=D.geo||{};
+  const geoG=cats.find(c=>c.k==='geo')?.grade||'A';
+  $('geo-h').textContent=GP(geoG)>.66?'Your GEO / AI Visibility is very good!':'Your GEO / AI Visibility needs improvement';
+  $('geo-p').textContent='Evaluating how LLMs and AI search engines can crawl and understand '+D.domain;
+
+  si('ci-render',geo.renderOk?'p':'w');
+  $('render-st').textContent=geo.renderOk?'low render percentage — good for LLMs':'high render percentage — harder for LLMs';
+  $('render-body').textContent=geo.renderDesc||'';
+  $('render-pct').textContent=geo.renderPct||'Unknown';
+
+  si('ci-llms',geo.llmsTxt?'p':'w');
+  $('llms-st').textContent=geo.llmsTxt?'llms.txt found':'llms.txt not found';
+  $('llms-url').textContent=geo.llmsTxtUrl||'Not found';
+  $('llms-body').textContent=geo.llmsDesc||'';
+
+  const tr=geo.traffic||{};
+  $('traffic-grid').innerHTML=[['Google Organic',tr.org||0],['Paid Search',tr.paid||0],['AI Overviews',tr.ai||0]].map(([l,v])=>`<div class="mcard"><div class="mval ${v>0?'mv-g':''}">${v.toLocaleString()}</div><div class="mlbl">${l}</div></div>`).join('');
+
+  $('kw-rank').innerHTML=(geo.kws||[]).map(k=>`<tr><td><strong>${k.kw}</strong></td><td>${k.co}</td><td><span class="${k.pos<=3?'pb-g':k.pos<=10?'pb-w':'pb-r'}">${k.pos}</span></td><td>${(k.vol||0).toLocaleString()}</td><td>${k.tr||0}</td></tr>`).join('');
+  $('kw-pos').innerHTML=(geo.positions||[]).map(p=>`<tr><td>${p.r}</td><td><strong>${p.n}</strong></td></tr>`).join('');
+
+  // ── USABILITY ──
+  const us=D.us||{};
+  const usG=cats.find(c=>c.k==='us')?.grade||'B';
+  $('us-h').textContent=GP(usG)>.66?'Your usability is good':'Your usability could be better';
+  $('us-p').textContent='Usability issues affect bounce rates and user satisfaction — both indirectly impact search rankings.';
+
+  const cwv=us.cwv||{};
+  const lcpV=parseFloat(cwv.lcp),inpV=parseFloat(cwv.inp),clsV=parseFloat(cwv.cls);
+  si('ci-cwv',cwv.pass?'p':'f');
+  $('cwv-st').textContent=cwv.pass?'passed assessment':'failed assessment';
+  $('cwv-adv').textContent=us.cwvAdvice||'';
+  $('cwv-lcp').textContent=cwv.lcp||'N/A';$('cwv-lcp').className='gauge-val '+(lcpV<=2.5?'gv-g':lcpV<=4?'gv-w':'gv-b');
+  $('cwv-inp').textContent=cwv.inp||'N/A';$('cwv-inp').className='gauge-val '+(inpV<=200?'gv-g':inpV<=500?'gv-w':'gv-b');
+  $('cwv-cls').textContent=cwv.cls||'N/A';$('cwv-cls').className='gauge-val '+(clsV<=.1?'gv-g':clsV<=.25?'gv-w':'gv-b');
+
+  const mob=us.mob||{},mc=mob.score>=90?'var(--green)':mob.score>=50?'var(--warn)':'var(--fail)';
+  $('mob-score').textContent=mob.score||'—';$('mob-score').style.color=mc;$('mob-circle').style.borderColor=mc;
+  si('ci-mob',mob.score>=90?'p':mob.score>=50?'w':'f');
+  $('mob-lbl').textContent=mob.score>=90?'excellent':mob.score>=50?'needs improvement':'scoring poorly';$('mob-lbl').style.color=mc;
+  $('mob-tbl').innerHTML=[['First Contentful Paint',mob.fcp],['Speed Index',mob.si],['Largest Contentful Paint',mob.lcp],['Time to Interactive',mob.tti],['Total Blocking Time',mob.tbt],['Cumulative Layout Shift',mob.cls]].map(([l,v])=>`<tr><td>${l}</td><td><strong>${v||'—'}</strong></td></tr>`).join('');
+  $('mob-opp').innerHTML=(mob.opps||[]).map(o=>`<tr><td>${o.n}</td><td><strong style="color:var(--warn)">${o.s}</strong></td></tr>`).join('');
+
+  const desk=us.desk||{},dc=desk.score>=90?'var(--green)':desk.score>=50?'var(--warn)':'var(--fail)';
+  $('desk-score').textContent=desk.score||'—';$('desk-score').style.color=dc;$('desk-circle').style.borderColor=dc;
+  si('ci-desk',desk.score>=90?'p':desk.score>=50?'w':'f');
+  $('desk-lbl').textContent=desk.score>=90?'excellent':desk.score>=50?'needs improvement':'scoring poorly';$('desk-lbl').style.color=dc;
+  $('desk-tbl').innerHTML=[['First Contentful Paint',desk.fcp],['Speed Index',desk.si],['Largest Contentful Paint',desk.lcp],['Time to Interactive',desk.tti],['Total Blocking Time',desk.tbt],['Cumulative Layout Shift',desk.cls]].map(([l,v])=>`<tr><td>${l}</td><td><strong>${v||'—'}</strong></td></tr>`).join('');
+  $('desk-opp').innerHTML=(desk.opps||[]).map(o=>`<tr><td>${o.n}</td><td><strong style="color:var(--warn)">${o.s}</strong></td></tr>`).join('');
+
+  $('viewport-st').textContent=us.viewport?'correctly specified':'not specified';
+  si('ci-iframe',us.iframes?'w':'p');$('iframe-st').textContent=us.iframes?'iFrames detected':'no iFrames detected';$('iframe-body').textContent=us.iframesDesc||'';
+  $('font-st').textContent=us.fontSizes?'text is readable across devices':'potential readability issues';
+  $('tap-st').textContent=us.tapTargets?'appropriately sized':'some targets may be too small';
+  si('ci-fav',us.favicon?'p':'w');$('fav-st').textContent=us.favicon?'favicon specified':'no favicon found';
+  si('ci-email',us.emailPrivacy?'p':'w');$('email-st').textContent=us.emailPrivacy?'no plain-text emails exposed':'plain-text email addresses found';
+
+  // ── PERFORMANCE ──
+  const pf=D.pf||{};
+  const pfG=cats.find(c=>c.k==='pf')?.grade||'A';
+  $('pf-h').textContent=GP(pfG)>.66?'Your performance is good':'Your performance needs improvement';
+  $('pf-p').textContent='Page speed, download size, compression, and resource breakdown for '+D.domain;
+
+  const spd=pf.speed||{};
+  si('ci-spd',spd.ok?'p':'w');$('spd-st').textContent=spd.ok?'loads in a reasonable time':'slow — needs improvement';
+  $('sp-srv').textContent=spd.srv||'—';$('sp-cnt').textContent=spd.cnt||'—';$('sp-scr').textContent=spd.scr||'—';
+
+  const sz=pf.size||{};
+  si('ci-sz',sz.ok?'p':'w');$('sz-st').textContent=sz.ok?'file size is reasonably low':'file size is too large';
+  $('sz-tot').textContent=sz.tot||'—';
+  $('sz-bars').innerHTML=[['HTML',sz.html],['CSS',sz.css],['JavaScript',sz.js],['Images',sz.img],['Other',sz.other]].map(([l,v])=>{const n=parseFloat(v)||0,p=Math.min(Math.round(n/1.5*100),100);return`<div class="sbar"><div class="sbar-l">${l}</div><div class="sbar-tr"><div class="sbar-fi" style="width:${p}%"></div></div><div class="sbar-v">${v||'—'}</div></div>`}).join('');
+
+  const comp=pf.comp||{};
+  si('ci-comp',comp.ok?'p':'w');$('comp-st').textContent=comp.ok?'compression active':'limited compression';
+  $('comp-r').textContent=comp.rate||'—';
+  $('comp-tbl').innerHTML=[['HTML',comp.html],['CSS',comp.css],['JavaScript',comp.js],['Images',comp.img],['Other',comp.other]].map(([l,v])=>{const n=parseInt(v)||0,col=n>=50?'#1e8449':n>0?'#b7770d':'#ccc';return`<tr><td style="width:80px;padding:4px 0;font-size:12px;color:var(--sub)">${l}</td><td><div class="cbar-wrap"><div class="cbar-tr"><div class="cbar-fi" style="width:${n}%;background:${col}"></div></div><span style="font-size:11.5px;color:var(--lite);width:38px;text-align:right">${v||'—'}</span></div></td></tr>`}).join('');
+
+  si('ci-http2',pf.http2?'p':'w');$('http2-st').textContent=pf.http2?'HTTP/2 protocol in use':'not using HTTP/2 — update recommended';
+  si('ci-imgopt',pf.imgOpt?'p':'w');$('imgopt-st').textContent=pf.imgOpt?'all images appear optimised':'some images need optimisation';
+  si('ci-minify',!pf.minify?'p':'w');$('minify-st').textContent=pf.minify?'some files not minified':'all files appear minified';$('minify-body').textContent=pf.minifyDesc||'';
+  si('ci-jserr',pf.jsErrors?'f':'p');$('jserr-st').textContent=pf.jsErrors?'errors detected':'no errors detected';$('js-err').textContent=pf.jsErrDesc||'';$('jserr-body').textContent=pf.jsErrors?'JavaScript errors can break functionality. Investigate and resolve all JS errors.':'No JavaScript errors detected.';
+  si('ci-inline',pf.inlineStyles?'w':'p');$('inline-st').textContent=pf.inlineStyles?'inline styles detected — move to CSS':'no inline styles';$('inline-body').textContent=pf.inlineDesc||'';
+  $('dep-st').textContent=(pf.depHtml?'deprecated HTML found':'no deprecated HTML tags found');
+
+  const res=pf.res||{};
+  $('res-grid').innerHTML=[['Total',res.tot],['HTML',res.html],['JS',res.js],['CSS',res.css],['Images',res.img],['Other',res.other]].map(([l,v])=>`<div class="mcard"><div class="mval">${v||0}</div><div class="mlbl">${l}</div></div>`).join('');
+
+  // ── SOCIAL ──
+  $('soc-rows').innerHTML=(D.social||[]).map(s=>`<div class="soc-row">
+    <div class="soc-ic" style="background:${s.bg};color:${s.c}">${s.ico}</div>
+    <div style="flex:1">
+      <div class="soc-name">${s.name} — ${s.linked?'linked':'not linked'}</div>
+      <div class="soc-url">${s.url||''}</div>
+      ${s.stat?`<div class="soc-stat">${s.stat}</div>`:''}
+    </div>
+    <div style="color:${s.linked?'var(--green)':'var(--lite)'};font-size:15px;font-weight:700">${s.linked?'✓':'—'}</div>
+  </div>`).join('');
+
+  si('ci-fbpx',D.fbPixelOk?'p':'w');
+  $('fbpx-st').textContent=D.fbPixelOk?'installed':'not found';
+  $('fb-px').textContent=D.fbPixel?'Pixel ID: '+D.fbPixel:'Not detected';
+
+  $('og-tbl').innerHTML='<thead><tr><th>Tag</th><th>Content</th></tr></thead><tbody>'+(D.ogTags||[]).map(t=>`<tr><td><code>${t.t}</code></td><td style="word-break:break-all;color:var(--sub)">${t.v}</td></tr>`).join('')+'</tbody>';
+
+  si('ci-twcard',D.twitterCard?'p':'w');
+  $('twcard-st').textContent=D.twitterCard?'configured':'not found';
+  $('tw-tbl').innerHTML='<thead><tr><th>Tag</th><th>Content</th></tr></thead><tbody>'+(D.twitterTags||[]).map(t=>`<tr><td><code>${t.t}</code></td><td style="word-break:break-all;color:var(--sub)">${t.v}</td></tr>`).join('')+'</tbody>';
+
+  // ── LOCAL SEO ──
+  const loc=D.local||{};
+  si('ci-addr',loc.hasAddress?'p':'w');
+  $('addr-st').textContent=loc.hasAddress?'address and phone visible':'address or phone not found';
+  $('loc-c').innerHTML=loc.hasAddress?`<div><strong>Phone:</strong> ${loc.phone||'—'}</div><div style="margin-top:5px"><strong>Address:</strong> ${loc.addr||'—'}</div>`:'No address or phone detected on page.';
+
+  si('ci-lschema',loc.localSchema?'p':'w');
+  $('lschema-st').textContent=loc.localSchema?'identified on page':'not found';
+  $('lschema-v').textContent=loc.schemaType?loc.schemaType+' schema markup detected':'LocalBusiness schema not found';
+
+  const gbp=loc.gbp||{};
+  si('ci-gbp',gbp.found?'p':'w');
+  $('gbp-st').textContent=gbp.found?'identified':'not found';
+  $('gbp-card').innerHTML=gbp.found?`<div style="font-weight:600">${gbp.name||'—'}</div><div style="margin-top:5px;color:var(--sub)">${gbp.addr||'—'}</div><div style="margin-top:4px;color:var(--sub)">📞 ${gbp.phone||'—'}</div>`:'No Google Business Profile found for this domain.';
+
+  const rev=loc.reviews||{};
+  const rating=rev.rating||0,stars=Math.round(rating);
+  si('ci-rev',rating>=4?'p':rating>=3?'w':'f');
+  $('rev-st').textContent=rating>=4?'good rating':'rating needs improvement';
+  $('rev-r').textContent=rating||'—';
+  $('rev-s').textContent='★'.repeat(stars)+'☆'.repeat(5-stars);
+  $('rev-c').textContent=(rev.count||0)+' reviews';
+  const dist=rev.dist||[0,0,0,0,0],maxDist=Math.max(...dist,1);
+  $('rev-bars').innerHTML=[5,4,3,2,1].map((star,i)=>`<div class="rbar-row"><div class="rbar-lbl">${star}</div><div class="rbar-tr"><div class="rbar-fi" style="width:${Math.round((dist[i]||0)/maxDist*100)}%"></div></div><div class="rbar-n">${dist[i]||0}</div></div>`).join('');
+
+  // ── TECHNOLOGY ──
+  const tech=D.tech||{};
+  $('tech-body').innerHTML=(tech.list||[]).map(t=>`<tr><td>${t.name}</td><td style="color:var(--lite)">${t.ver||''}</td></tr>`).join('');
+
+  si('ci-dmarc',tech.dmarc?'p':'f');
+  $('dmarc-st').textContent=tech.dmarc?'DMARC record found':'not found';
+  $('dmarc-body').textContent=tech.dmarcDesc||'';
+
+  si('ci-spf',tech.spf?'p':'w');
+  $('spf-st').textContent=tech.spf?'SPF record found':'not found';
+  $('spf-v').textContent=tech.spfRecord||'Not found';
+
+  $('srv-info').innerHTML=[
+    tech.server?`<div class="ttech">Server: ${tech.server}</div>`:'',
+    tech.serverIp?`<div class="ttech">IP: ${tech.serverIp}</div>`:'',
+    tech.charset?`<div class="ttech">Charset: ${tech.charset}</div>`:'',
+    tech.http2?`<div class="ttech">HTTP/2 ✓</div>`:'',
+    tech.http3?`<div class="ttech">HTTP/3 ✓</div>`:''
+  ].filter(Boolean).join('');
+
+  // ── RECOMMENDATIONS ──
+  $('recs-body').innerHTML=(D.recommendations||[]).map((r,i,arr)=>`
+    <div class="crow"${i===arr.length-1?' style="border-bottom:none"':''}>
+      <div class="crow-hdr">
+        <div class="cicon ci-w" style="font-size:10px;font-weight:700">${r.priority||i+1}</div>
+        <div class="crow-title" style="font-weight:600">${r.title}</div>
+      </div>
+      <div class="rec-item">${r.detail}</div>
+    </div>`).join('');
+}
+
+// ── Main ──
+$('btn-start').onclick=()=>{
+  const url=$('f-url').value.trim(),name=$('f-name').value.trim(),email=$('f-email').value.trim();
+  let ok=true;
+  const se=(id,m)=>{$(id).textContent=m;$(id).style.display='block';$('f-'+id.split('-')[1]).classList.add('err')};
+  const he=id=>{$(id).style.display='none';$('f-'+id.split('-')[1]).classList.remove('err')};
+  if(!url||!/^https?:\/\/.+\..+/.test(url)){se('e-url','Enter a valid URL e.g. https://yourwebsite.com');ok=false}else he('e-url');
+  if(!name){se('e-name','Name is required');ok=false}else he('e-name');
+  if(!email||!/\S+@\S+\.\S+/.test(email)){se('e-email','Enter a valid email');ok=false}else he('e-email');
+  if(!ok)return;
+
+  const domain=url.replace(/^https?:\/\//,'').split('/')[0];
+  hide('page-form');show('page-loading');
+  $('l-dom').textContent='Auditing '+domain;
+  $('btn-start').disabled=true;
+
+  const log=$('l-log');
+  const STEPS=['Fetching website content...','Reading title and meta tags...','Scanning heading structure...','Extracting keyword data...','Checking canonical and robots.txt...','Looking up XML sitemap...','Verifying HTTPS redirect...','Detecting analytics tools...','Reading schema markup...','Checking Open Graph tags...','Searching social profiles...','Looking up Google Business Profile...','Analysing Core Web Vitals...','Fetching PageSpeed — Mobile...','Fetching PageSpeed — Desktop...','Checking page size & compression...','Detecting technology stack...','Checking DMARC & SPF records...','Evaluating GEO / AI visibility...','Checking llms.txt...','Looking up keyword rankings...','Compiling grades...','Generating recommendations...','Finalising report...'];
+  let stepIdx=0,pollTimer=null;
+
+  function tickStep(){
+    if(stepIdx<STEPS.length){
+      if(stepIdx>0){const d=document.createElement('div');d.className='slog';d.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>'+STEPS[stepIdx-1].replace('...','');log.appendChild(d);log.scrollTop=log.scrollHeight;}
+      $('l-step').textContent=STEPS[stepIdx];
+      const pct=Math.min(Math.round((stepIdx/STEPS.length)*88),88);
+      $('pbar').style.width=pct+'%';$('l-pct').textContent=pct+'% complete';
+      stepIdx++;
+    }
+  }
+
+  function done(data,n,e){
+    clearInterval(pollTimer);
+    $('pbar').style.width='100%';$('l-pct').textContent='100% complete';$('l-step').textContent='Report ready!';
+    setTimeout(()=>{hide('page-loading');buildReport(data,n,e);show('page-report');window.scrollTo(0,0);$('btn-start').disabled=false;},600);
+  }
+  function fail(msg){
+    clearInterval(pollTimer);
+    hide('page-loading');$('err-msg').textContent=msg||'An error occurred. Please try again.';show('page-error');$('btn-start').disabled=false;
+  }
+
+  // 1 — Start the audit job
+  fetch('/api/audit_start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,name,email})})
+  .then(r=>r.json())
+  .then(({job_id,error})=>{
+    if(error||!job_id) return fail(error||'Failed to start audit');
+
+    const progressTimer=setInterval(tickStep,3000);
+    let attempts=0;
+
+    // 2 — Poll every 5 seconds
+    pollTimer=setInterval(()=>{
+      attempts++;
+      if(attempts>90){clearInterval(progressTimer);return fail('Audit timed out after 7 minutes. Please try again.');}
+      fetch(`/api/audit_poll?job_id=${job_id}`)
+        .then(r=>r.json())
+        .then(res=>{
+          if(res.status==='done'){clearInterval(progressTimer);done(res.data,res.name||name,res.email||email);}
+          else if(res.status==='error'){clearInterval(progressTimer);fail(res.message);}
+          // status==='running' → keep polling
+        }).catch(()=>{});
+    },5000);
+  })
+  .catch(err=>fail('Network error: '+err.message));
+};
+
+function doReset(){hide('page-report');hide('page-error');show('page-form');window.scrollTo(0,0);$('l-log').innerHTML='';$('pbar').style.width='0%';$('l-pct').textContent='0% complete';$('l-step').textContent='Initialising AI audit engine...'}
+$('btn-print').onclick=$('btn-print2').onclick=()=>window.print();
+$('btn-new').onclick=$('btn-new2').onclick=$('btn-retry').onclick=doReset;
+['f-url','f-name','f-email'].forEach(id=>{$(id).addEventListener('keydown',e=>{if(e.key==='Enter')$('btn-start').click()})});
+</script>
+</body>
+</html>
