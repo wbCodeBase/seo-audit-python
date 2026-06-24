@@ -3,113 +3,87 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>AI Ranking Checker — See How Claude Ranks Websites for Any Query</title>
+<title>AI Visibility Report — See How Claude Knows Your Domain</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
 :root{
-  --navy:#0a0f1e;--navy2:#0d1b2e;
-  --card:#111e30;
-  --blue:#3b9eff;--cyan:#00ccff;
-  --purple:#8B5CF6;
+  --navy:#0a0f1e;--navy2:#0d1b2e;--card:#111e30;--card2:#0d1425;
+  --blue:#3b9eff;--cyan:#00ccff;--purple:#8B5CF6;
+  --green:#4ade80;--amber:#fbbf24;--red:#f87171;
   --border:rgba(255,255,255,.08);
   --txt:#e8f0ff;--sub:#8ba4c4;--muted:#5a7a9e;
-  --green:#4ade80;
   --font:'Sora',sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font);background:var(--navy2);color:var(--txt);font-size:13.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font);background:var(--navy);color:var(--txt);font-size:13.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
 button{font-family:var(--font);cursor:pointer}
 .hidden{display:none!important}
-
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 @keyframes scaleIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
 
 /* ══ FORM PAGE ══ */
 #page-form{
-  min-height:100vh;
-  background:#0d1b2e;
+  min-height:100vh;background:#0d1b2e;
   background-image:
     radial-gradient(ellipse 80% 60% at 50% -10%,rgba(30,90,160,.35) 0%,transparent 70%),
     url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.022'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  display:flex;flex-direction:column;align-items:center;padding:0;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;overflow:hidden;
 }
-.hero-top{width:100%;text-align:center;padding:72px 20px 48px;position:relative;z-index:2}
+.hero-top{width:100%;text-align:center;padding:68px 20px 44px;position:relative;z-index:2}
 .hero-badge{
   display:inline-flex;align-items:center;gap:8px;
-  background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.3);
-  border-radius:20px;padding:5px 14px;
-  font-size:11px;font-weight:600;color:#a78bfa;
-  letter-spacing:.06em;text-transform:uppercase;margin-bottom:22px;
+  background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.28);
+  border-radius:20px;padding:5px 14px;margin-bottom:22px;
+  font-size:10.5px;font-weight:700;color:#a78bfa;letter-spacing:.07em;text-transform:uppercase;
 }
-.badge-live-dot{
-  width:7px;height:7px;border-radius:50%;background:#8B5CF6;
-  box-shadow:0 0 6px rgba(139,92,246,.8);
-}
-.hero-headline{
-  font-size:clamp(32px,5.5vw,58px);font-weight:800;line-height:1.1;
-  color:#fff;letter-spacing:-.03em;margin-bottom:18px;
-}
-.hero-headline .accent{
-  background:linear-gradient(90deg,#8B5CF6,#3b9eff);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
-.hero-sub{font-size:clamp(13px,2vw,16px);color:#8ba4c4;line-height:1.7;max-width:520px;margin:0 auto}
-.hero-model-pill{
-  display:inline-flex;align-items:center;gap:8px;margin-top:24px;
-  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
-  border-radius:20px;padding:7px 16px;font-size:12px;color:var(--sub);
-}
-.model-dot{width:8px;height:8px;border-radius:50%;background:#8B5CF6;flex-shrink:0}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#8B5CF6;box-shadow:0 0 8px rgba(139,92,246,.9)}
+.hero-headline{font-size:clamp(30px,5vw,56px);font-weight:800;line-height:1.1;color:#fff;letter-spacing:-.03em;margin-bottom:16px}
+.hero-headline .accent{background:linear-gradient(90deg,#8B5CF6,#3b9eff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:clamp(13px,1.8vw,15.5px);color:#8ba4c4;line-height:1.7;max-width:520px;margin:0 auto 24px}
+.feature-pills{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.fpill{font-size:11.5px;color:var(--muted);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:5px 13px;display:flex;align-items:center;gap:5px}
+.fpill-dot{width:6px;height:6px;border-radius:50%;background:var(--purple)}
 
-/* ── FORM CARD ── */
+/* Form card */
 .form-card{
-  width:100%;max-width:600px;
+  width:100%;max-width:620px;margin:0 20px 48px;
   background:#111e30;border:1px solid rgba(255,255,255,.08);
   border-radius:18px;padding:32px 32px 28px;
-  position:relative;z-index:2;
-  box-shadow:0 24px 80px rgba(0,0,0,.5);margin:0 20px 48px;
+  box-shadow:0 24px 80px rgba(0,0,0,.5);position:relative;z-index:2;
 }
-.flabel{
-  display:block;font-size:10px;font-weight:700;
-  letter-spacing:.1em;text-transform:uppercase;color:#5a7a9e;margin-bottom:6px;
-}
+.flabel{display:block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#5a7a9e;margin-bottom:6px}
 .opt-tag{font-size:9.5px;font-weight:500;letter-spacing:0;text-transform:none;color:var(--muted);margin-left:6px}
-input[type=url]{
-  width:100%;background:#0d1b2e;border:1px solid rgba(255,255,255,.1);
-  border-radius:10px;padding:12px 14px;font-size:14px;font-family:var(--font);
-  color:#e8f0ff;outline:none;transition:border-color .2s,box-shadow .2s;
+input[type=url],input[type=text],textarea{
+  width:100%;background:#0d1b2e;border:1px solid rgba(255,255,255,.1);border-radius:10px;
+  padding:12px 14px;font-size:14px;font-family:var(--font);color:#e8f0ff;outline:none;
+  transition:border-color .2s,box-shadow .2s;
 }
-textarea{
-  width:100%;background:#0d1b2e;border:1px solid rgba(255,255,255,.1);
-  border-radius:10px;padding:12px 14px;font-size:14px;font-family:var(--font);
-  color:#e8f0ff;outline:none;resize:vertical;min-height:90px;
-  transition:border-color .2s,box-shadow .2s;line-height:1.6;
-}
+textarea{resize:vertical;min-height:80px;line-height:1.6}
 input::placeholder,textarea::placeholder{color:#3a5270}
 input:focus,textarea:focus{border-color:#8B5CF6;box-shadow:0 0 0 3px rgba(139,92,246,.18)}
-input.err,textarea.err{border-color:#ef4444}
+input.err{border-color:#ef4444}
 .fgroup{margin-bottom:18px}
 .errmsg{color:#ef4444;font-size:11px;margin-top:5px;display:none}
 .hint{font-size:11px;color:var(--muted);margin-top:5px}
+.divider{display:flex;align-items:center;gap:10px;margin:6px 0 18px;color:var(--muted);font-size:11px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.07)}
 
 .btn-run{
   width:100%;padding:15px;
   background:linear-gradient(90deg,#8B5CF6,#3b9eff);
   border:none;border-radius:12px;color:#fff;
-  font-family:var(--font);font-size:15px;font-weight:700;
-  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;
-  transition:opacity .15s,box-shadow .15s,transform .15s;
+  font-size:15px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:9px;
   box-shadow:0 4px 24px rgba(139,92,246,.35);
+  transition:opacity .15s,box-shadow .15s,transform .15s;
 }
 .btn-run:hover{opacity:.92;transform:translateY(-1px);box-shadow:0 8px 32px rgba(139,92,246,.45)}
-.btn-run:active{transform:translateY(0)}
+.btn-run:active{transform:none}
 .btn-run:disabled{opacity:.45;cursor:not-allowed;transform:none}
-
 .trust-bar{
   width:100%;border-top:1px solid rgba(255,255,255,.06);
-  padding:14px 20px;display:flex;align-items:center;
-  justify-content:center;gap:28px;flex-wrap:wrap;margin-top:auto;
+  padding:14px 20px;display:flex;align-items:center;justify-content:center;gap:28px;flex-wrap:wrap;margin-top:auto;
 }
 .trust-item{font-size:12px;color:#3d5a78;display:flex;align-items:center;gap:6px}
 .tck{color:#8B5CF6;font-size:11px;font-weight:700}
@@ -117,181 +91,186 @@ input.err,textarea.err{border-color:#ef4444}
 /* ══ LOADING PAGE ══ */
 #page-loading{
   min-height:100vh;display:flex;align-items:center;justify-content:center;
-  padding:32px 16px;
-  background:radial-gradient(ellipse 80% 60% at 50% 20%,#1a0d35 0%,var(--navy) 70%);
+  padding:32px 16px;background:radial-gradient(ellipse 80% 60% at 50% 20%,#1a0d35 0%,var(--navy) 70%);
 }
 .load-card{
   background:rgba(255,255,255,.04);border:1px solid rgba(139,92,246,.2);
-  border-radius:20px;padding:46px 38px;max-width:420px;width:100%;
+  border-radius:20px;padding:46px 38px;max-width:440px;width:100%;
   text-align:center;box-shadow:0 24px 48px rgba(0,0,0,.4);animation:scaleIn .4s ease;
 }
 .spin-wrap{position:relative;width:72px;height:72px;margin:0 auto 26px}
 .spin-outer{width:72px;height:72px;border:3px solid rgba(255,255,255,.08);border-top-color:#8B5CF6;border-radius:50%;animation:spin .9s linear infinite;position:absolute}
 .spin-inner{width:46px;height:46px;border:3px solid transparent;border-top-color:#3b9eff;border-radius:50%;animation:spin .6s linear infinite reverse;position:absolute;top:13px;left:13px}
 .spin-dot{width:8px;height:8px;border-radius:50%;background:#8B5CF6;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
-.l-title{font-size:17px;font-weight:700;color:#fff;margin-bottom:7px}
-.l-step{font-size:12.5px;color:var(--sub)}
+.l-title{font-size:17px;font-weight:700;color:#fff;margin-bottom:8px}
+.l-steps{display:flex;flex-direction:column;gap:6px;margin-top:18px}
+.l-step-item{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;text-align:left}
+.l-step-item.active{color:var(--sub)}
+.step-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.15);flex-shrink:0}
+.step-dot.active{background:#8B5CF6;box-shadow:0 0 6px rgba(139,92,246,.7)}
 
 /* ══ RESULTS PAGE ══ */
-#page-results{
-  min-height:100vh;background:#0a0f1e;padding:40px 16px 64px;
-}
-.results-wrap{max-width:800px;margin:0 auto}
+#page-results{min-height:100vh;background:#0a0f1e;padding:36px 16px 64px}
+.rpt-wrap{max-width:860px;margin:0 auto}
 
 /* Top bar */
-.results-topbar{
-  display:flex;align-items:flex-start;justify-content:space-between;
-  gap:14px;flex-wrap:wrap;margin-bottom:24px;
-}
-.results-heading{font-size:20px;font-weight:700;color:#fff;margin-bottom:8px}
-.query-box{
-  display:flex;align-items:flex-start;gap:9px;
-  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
-  border-radius:10px;padding:10px 14px;max-width:640px;
-}
-.qb-label{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);flex-shrink:0;margin-top:2px}
-.qb-text{font-size:13px;color:var(--sub);line-height:1.55}
-.btn-new{
-  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
-  border-radius:10px;padding:11px 18px;color:var(--txt);
-  font-size:13px;font-weight:500;transition:background .15s;white-space:nowrap;flex-shrink:0;
-}
+.rpt-topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:24px}
+.domain-display{display:flex;align-items:center;gap:12px}
+.domain-icon{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#8B5CF6,#6D28D9);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0}
+.domain-name{font-size:19px;font-weight:700;color:#fff}
+.domain-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.btn-new{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 18px;color:var(--txt);font-size:13px;font-weight:500;transition:background .15s;white-space:nowrap}
 .btn-new:hover{background:rgba(255,255,255,.12)}
 
-/* Claude panel header */
-.claude-panel{
-  background:#111e30;border:1px solid rgba(139,92,246,.2);
-  border-radius:16px;overflow:hidden;
-  animation:fadeUp .4s ease forwards;
+/* Score bar */
+.score-bar{
+  display:flex;gap:12px;margin-bottom:22px;flex-wrap:wrap;
 }
-.panel-header{
-  padding:18px 24px;
-  display:flex;align-items:center;gap:14px;
-  background:rgba(139,92,246,.07);
-  border-bottom:1px solid rgba(139,92,246,.15);
+.score-chip{
+  flex:1;min-width:140px;
+  background:#111e30;border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;padding:14px 16px;
+  display:flex;align-items:center;gap:12px;
 }
-.claude-icon{
-  width:44px;height:44px;border-radius:11px;flex-shrink:0;
-  background:linear-gradient(135deg,#8B5CF6,#6D28D9);
-  display:flex;align-items:center;justify-content:center;
-  font-size:18px;font-weight:800;color:#fff;
-}
-.panel-info{flex:1}
-.panel-name{font-size:15px;font-weight:700;color:#fff}
-.panel-sub{font-size:11.5px;color:var(--muted);margin-top:1px}
+.score-chip-num{font-size:24px;font-weight:800;line-height:1}
+.score-chip-lbl{font-size:11px;color:var(--muted);line-height:1.4}
+.score-chip-lbl strong{display:block;font-size:13px;color:var(--sub);font-weight:600;margin-bottom:1px}
 
-/* Query intent strip */
-.intent-strip{
-  padding:12px 24px;
-  background:rgba(255,255,255,.02);
+/* Section cards */
+.sec-card{
+  background:#111e30;border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;overflow:hidden;margin-bottom:16px;
+  animation:fadeUp .4s ease forwards;opacity:0;
+}
+.sec-card:nth-child(1){animation-delay:.04s}
+.sec-card:nth-child(2){animation-delay:.1s}
+.sec-card:nth-child(3){animation-delay:.16s}
+.sec-card:nth-child(4){animation-delay:.22s}
+.sec-card:nth-child(5){animation-delay:.28s}
+
+.sec-header{
+  padding:14px 22px;display:flex;align-items:center;gap:12px;
   border-bottom:1px solid rgba(255,255,255,.06);
-  font-size:12px;color:var(--muted);display:flex;align-items:flex-start;gap:8px;
 }
-.intent-label{font-weight:700;color:var(--sub);flex-shrink:0;text-transform:uppercase;font-size:10px;letter-spacing:.07em;margin-top:2px}
+.sec-header.purple{background:rgba(139,92,246,.1);border-bottom-color:rgba(139,92,246,.18)}
+.sec-header.blue{background:rgba(59,158,255,.08);border-bottom-color:rgba(59,158,255,.15)}
+.sec-header.cyan{background:rgba(6,182,212,.08);border-bottom-color:rgba(6,182,212,.15)}
+.sec-header.amber{background:rgba(251,191,36,.07);border-bottom-color:rgba(251,191,36,.15)}
+.sec-icon{font-size:18px;flex-shrink:0}
+.sec-title{font-size:14px;font-weight:700;color:#fff;flex:1}
+.sec-badge{font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:20px}
+.sec-body{padding:20px 22px}
 
-/* Domain position banner */
-.position-banner{
-  margin:20px 24px 0;
-  border-radius:12px;padding:16px 20px;
-  display:flex;align-items:center;gap:16px;
-}
-.pos-banner-found{
-  background:rgba(74,222,128,.08);
-  border:1px solid rgba(74,222,128,.2);
-}
-.pos-banner-notfound{
-  background:rgba(239,68,68,.06);
-  border:1px solid rgba(239,68,68,.18);
-}
-.pos-rank-big{
-  font-size:36px;font-weight:800;line-height:1;
-  color:#4ade80;flex-shrink:0;
-}
-.pos-rank-notfound{font-size:28px;font-weight:800;color:#f87171}
-.pos-info{}
-.pos-title{font-size:14px;font-weight:700;color:#fff;margin-bottom:3px}
-.pos-sub{font-size:12px;color:var(--sub)}
-.pos-domain-chip{
-  margin-top:6px;display:inline-flex;align-items:center;gap:5px;
-  font-size:11.5px;font-weight:600;
-  background:rgba(74,222,128,.12);color:#4ade80;
-  border-radius:20px;padding:3px 10px;
-}
-.pos-domain-chip-nf{
-  background:rgba(239,68,68,.1);color:#f87171;
+/* ── Profile section ── */
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;margin-bottom:18px}
+.profile-row{display:flex;flex-direction:column;gap:2px}
+.pr-label{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.pr-val{font-size:13px;color:var(--txt);font-weight:500}
+.description-block{
+  font-size:13px;color:var(--sub);line-height:1.75;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+  border-radius:8px;padding:14px 16px;margin-bottom:18px;
 }
 
-/* Rankings list */
-.rankings-list{padding:16px 24px 24px}
-.rank-item{
-  display:flex;align-items:flex-start;gap:14px;
-  padding:14px 0;border-bottom:1px solid rgba(255,255,255,.05);
-  position:relative;
-}
-.rank-item:last-child{border-bottom:none}
+.tags-wrap{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px}
+.tag{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--sub)}
+.tag.purple-t{background:rgba(139,92,246,.1);border-color:rgba(139,92,246,.25);color:#a78bfa}
+.tag.green-t{background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.2);color:#4ade80}
+.tag.red-t{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2);color:#f87171}
 
-/* Highlight user's domain */
-.rank-item.is-yours{
-  background:rgba(59,158,255,.05);
-  margin:0 -24px;
-  padding:14px 24px;
-  border-left:3px solid #3b9eff;
-  border-bottom:1px solid rgba(59,158,255,.12);
-}
+.facts-list{display:flex;flex-direction:column;gap:7px}
+.fact-item{display:flex;gap:9px;font-size:12.5px;color:var(--sub);line-height:1.55}
+.fact-icon{flex-shrink:0;margin-top:1px}
 
-.rank-num{
-  width:32px;height:32px;border-radius:50%;
+.sub-label{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;margin-top:16px;display:block}
+
+.gaps-list{display:flex;flex-direction:column;gap:6px}
+.gap-item{display:flex;gap:9px;font-size:12px;color:#fbbf24;background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.1);border-radius:6px;padding:7px 10px;line-height:1.5}
+
+.confidence-bar-wrap{display:flex;align-items:center;gap:10px;margin-top:4px}
+.confidence-track{flex:1;height:6px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden}
+.confidence-fill{height:100%;border-radius:4px}
+
+/* ── Ranking section ── */
+.pos-banner{border-radius:10px;padding:16px 20px;display:flex;align-items:center;gap:16px;margin-bottom:18px}
+.pos-banner.found{background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.18)}
+.pos-banner.notfound{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15)}
+.pos-num{font-size:40px;font-weight:800;line-height:1;flex-shrink:0}
+.pos-info .pos-title{font-size:14px;font-weight:700;color:#fff;margin-bottom:3px}
+.pos-info .pos-sub{font-size:12px;color:var(--sub);line-height:1.5}
+.pos-chip{display:inline-flex;align-items:center;gap:5px;margin-top:7px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.pos-chip.f{background:rgba(74,222,128,.12);color:#4ade80;border:1px solid rgba(74,222,128,.25)}
+.pos-chip.nf{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+
+.intent-row{font-size:12px;color:var(--muted);background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:7px;padding:9px 14px;margin-bottom:16px;display:flex;gap:8px}
+.intent-lbl{font-weight:700;color:var(--sub);flex-shrink:0;text-transform:uppercase;font-size:10px;letter-spacing:.07em;margin-top:1px}
+
+.rank-list{display:flex;flex-direction:column;gap:0}
+.rank-row{display:flex;gap:13px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.rank-row:last-child{border-bottom:none}
+.rank-row.yours{background:rgba(59,158,255,.05);margin:0 -22px;padding:12px 22px;border-left:3px solid #3b9eff;border-bottom-color:rgba(59,158,255,.1)}
+.rnum{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;flex-shrink:0;margin-top:2px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--sub)}
+.rnum.t3{background:rgba(139,92,246,.12);border-color:rgba(139,92,246,.25);color:#a78bfa}
+.rnum.you{background:rgba(59,158,255,.12);border-color:rgba(59,158,255,.25);color:#60a5fa}
+.rinfo{flex:1;min-width:0}
+.rinfo-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px}
+.rtitle{font-size:13.5px;font-weight:600;color:#fff}
+.your-chip{font-size:10px;font-weight:700;background:rgba(59,158,255,.12);color:#60a5fa;border:1px solid rgba(59,158,255,.22);border-radius:4px;padding:2px 7px;text-transform:uppercase;letter-spacing:.04em}
+.rdomain{font-size:11.5px;color:#4ade80;display:flex;align-items:center;gap:4px;margin-bottom:4px}
+.rdesc{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* ── Expected prompts section ── */
+.prompt-list{display:flex;flex-direction:column;gap:10px}
+.prompt-row{
+  display:flex;align-items:flex-start;gap:12px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+  border-radius:10px;padding:13px 15px;
+  transition:border-color .15s;
+}
+.prompt-row:hover{border-color:rgba(255,255,255,.12)}
+.likelihood-badge{
+  flex-shrink:0;font-size:10px;font-weight:800;letter-spacing:.06em;
+  padding:4px 9px;border-radius:6px;text-transform:uppercase;margin-top:1px;
+}
+.lh-high{background:rgba(74,222,128,.12);color:#4ade80;border:1px solid rgba(74,222,128,.22)}
+.lh-medium{background:rgba(59,158,255,.1);color:#60a5fa;border:1px solid rgba(59,158,255,.2)}
+.lh-low{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid rgba(255,255,255,.1)}
+.prompt-text{font-size:13.5px;font-weight:600;color:#fff;margin-bottom:3px}
+.prompt-reason{font-size:11.5px;color:var(--muted);line-height:1.55}
+.intent-tag{display:inline-block;font-size:10px;margin-top:4px;background:rgba(255,255,255,.05);color:var(--muted);border-radius:4px;padding:1px 7px}
+
+/* ── Suggestions section ── */
+.sug-list{display:flex;flex-direction:column;gap:12px}
+.sug-row{display:flex;gap:14px;align-items:flex-start}
+.sug-num{
+  width:34px;height:34px;border-radius:9px;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
-  font-size:13px;font-weight:700;flex-shrink:0;
-  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
-  color:var(--sub);margin-top:2px;
+  font-size:14px;font-weight:800;color:#fff;
 }
-.rank-num.top3{
-  background:rgba(139,92,246,.15);border-color:rgba(139,92,246,.3);color:#a78bfa;
-}
-.rank-num.is-yours-num{
-  background:rgba(59,158,255,.15);border-color:rgba(59,158,255,.3);color:#60a5fa;
-}
+.sug-p-high{background:linear-gradient(135deg,#ef4444,#dc2626)}
+.sug-p-medium{background:linear-gradient(135deg,#f59e0b,#d97706)}
+.sug-p-low{background:linear-gradient(135deg,#3b9eff,#2563eb)}
+.sug-content{flex:1}
+.sug-meta{display:flex;align-items:center;gap:7px;margin-bottom:4px;flex-wrap:wrap}
+.sug-title{font-size:13.5px;font-weight:700;color:#fff}
+.cat-chip{font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:rgba(255,255,255,.07);color:var(--muted);border:1px solid rgba(255,255,255,.1)}
+.prio-chip{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;text-transform:uppercase}
+.ph{background:rgba(239,68,68,.1);color:#fca5a5;border:1px solid rgba(239,68,68,.2)}
+.pm{background:rgba(245,158,11,.1);color:#fde68a;border:1px solid rgba(245,158,11,.2)}
+.pl{background:rgba(59,130,246,.1);color:#93c5fd;border:1px solid rgba(59,130,246,.2)}
+.sug-desc{font-size:12.5px;color:var(--sub);line-height:1.7}
 
-.rank-content{flex:1;min-width:0}
-.rank-header{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px}
-.rank-title{font-size:14px;font-weight:600;color:#fff}
-.yours-chip{
-  display:inline-flex;align-items:center;gap:4px;
-  font-size:10px;font-weight:700;letter-spacing:.05em;
-  background:rgba(59,158,255,.15);color:#60a5fa;
-  border:1px solid rgba(59,158,255,.25);
-  border-radius:4px;padding:2px 7px;text-transform:uppercase;
-}
-.rank-domain{
-  font-size:12px;color:#4ade80;margin-bottom:5px;
-  display:flex;align-items:center;gap:5px;
-}
-.rank-desc{font-size:12.5px;color:var(--sub);line-height:1.65}
+/* No data placeholder */
+.no-data{text-align:center;padding:30px;color:var(--muted);font-size:13px}
 
-/* Error / no-key states */
-.state-card{
-  padding:40px 24px;text-align:center;
-}
-.state-icon{font-size:40px;margin-bottom:14px}
-.state-title{font-size:15px;font-weight:700;color:var(--sub);margin-bottom:8px}
-.state-desc{font-size:12.5px;color:var(--muted);line-height:1.7;max-width:340px;margin:0 auto}
-.state-env{
-  display:inline-block;margin-top:14px;font-size:11.5px;font-family:monospace;
-  color:var(--muted);background:rgba(255,255,255,.04);
-  border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:5px 14px;
-}
-
-@media(max-width:520px){
+@media(max-width:600px){
+  .profile-grid{grid-template-columns:1fr}
+  .score-bar{flex-direction:column}
+  .rpt-topbar{flex-direction:column}
+  .sec-body,.sec-header{padding-left:16px;padding-right:16px}
+  .rank-row.yours{margin:0 -16px;padding:12px 16px}
   .form-card{padding:22px 18px 20px;margin:0 12px 32px}
-  .hero-top{padding:52px 20px 36px}
-  .trust-bar{gap:16px}
-  .results-topbar{flex-direction:column}
-  .panel-header{padding:14px 16px}
-  .rankings-list{padding:12px 16px 20px}
-  .rank-item.is-yours{margin:0 -16px;padding:12px 16px}
-  .position-banner{margin:16px 16px 0}
-  .intent-strip{padding:10px 16px}
+  .trust-bar{gap:14px}
 }
 </style>
 </head>
@@ -300,42 +279,40 @@ input.err,textarea.err{border-color:#ef4444}
 <!-- ══ FORM PAGE ══ -->
 <div id="page-form">
   <div class="hero-top">
-    <div class="hero-badge">
-      <span class="badge-live-dot"></span>
-      Claude AI · Ranking Checker
-    </div>
-    <h1 class="hero-headline">Where do you <span class="accent">rank on Claude?</span></h1>
-    <p class="hero-sub">Type any search query. Claude will rank the top 10 results — see exactly where your website appears and which position you hold.</p>
-    <div class="hero-model-pill">
-      <span class="model-dot"></span>
-      Powered by Claude Sonnet · Anthropic
+    <div class="hero-badge"><span class="live-dot"></span> Claude AI Visibility Analyzer</div>
+    <h1 class="hero-headline">How is your domain <span class="accent">indexed on Claude?</span></h1>
+    <p class="hero-sub">Enter your domain and get a full AI visibility report — what Claude knows, your ranking, prompts that surface you, and how to improve.</p>
+    <div class="feature-pills">
+      <div class="fpill"><span class="fpill-dot"></span> AI Knowledge Profile</div>
+      <div class="fpill"><span class="fpill-dot" style="background:#3b9eff"></span> Ranking Check</div>
+      <div class="fpill"><span class="fpill-dot" style="background:#06b6d4"></span> Expected Prompts</div>
+      <div class="fpill"><span class="fpill-dot" style="background:#f59e0b"></span> Optimization Tips</div>
     </div>
   </div>
 
   <div class="form-card">
     <div class="fgroup">
-      <label class="flabel" for="f-prompt">Search Query</label>
-      <textarea id="f-prompt" placeholder="e.g. Best digital marketing agency in Noida&#10;Top SEO tools for small businesses&#10;Budget-friendly web design services"></textarea>
-      <div class="errmsg" id="e-prompt">Please enter a search query.</div>
-      <div class="hint">Tip: Use queries your customers actually search for. Ctrl+Enter to submit.</div>
-    </div>
-    <div class="fgroup">
-      <label class="flabel" for="f-domain">
-        Your Website
-        <span class="opt-tag">(Optional — to highlight your position)</span>
-      </label>
+      <label class="flabel" for="f-domain">Your Website Domain</label>
       <input type="url" id="f-domain" placeholder="https://yourwebsite.com"/>
+      <div class="errmsg" id="e-domain">Please enter your website domain.</div>
+    </div>
+    <div class="divider">Optional — check ranking for a specific query</div>
+    <div class="fgroup">
+      <label class="flabel" for="f-prompt">Search Query <span class="opt-tag">(Optional)</span></label>
+      <textarea id="f-prompt" placeholder="e.g. Best digital marketing agency in Noida&#10;Affordable SEO services for mortgage websites"></textarea>
+      <div class="hint">If provided, Claude will rank the top 10 results and show your exact position.</div>
     </div>
     <button class="btn-run" id="btn-check">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      Check Claude Rankings
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      Analyze AI Presence
     </button>
   </div>
 
   <div class="trust-bar">
-    <div class="trust-item"><span class="tck">✓</span> Real Claude rankings</div>
-    <div class="trust-item"><span class="tck">✓</span> Top 10 results</div>
-    <div class="trust-item"><span class="tck">✓</span> Your position highlighted</div>
+    <div class="trust-item"><span class="tck">✓</span> Domain AI profile</div>
+    <div class="trust-item"><span class="tck">✓</span> Ranking position</div>
+    <div class="trust-item"><span class="tck">✓</span> Expected prompts</div>
+    <div class="trust-item"><span class="tck">✓</span> AI optimization tips</div>
     <div class="trust-item"><span class="tck">✓</span> No signup needed</div>
   </div>
 </div>
@@ -344,172 +321,358 @@ input.err,textarea.err{border-color:#ef4444}
 <div id="page-loading" class="hidden">
   <div class="load-card">
     <div class="spin-wrap">
-      <div class="spin-outer"></div>
-      <div class="spin-inner"></div>
-      <div class="spin-dot"></div>
+      <div class="spin-outer"></div><div class="spin-inner"></div><div class="spin-dot"></div>
     </div>
-    <div class="l-title">Asking Claude to rank results...</div>
-    <div class="l-step" id="l-step">Analyzing your query and building top 10 rankings...</div>
+    <div class="l-title">Analyzing AI visibility...</div>
+    <div class="l-steps">
+      <div class="l-step-item active"><span class="step-dot active"></span> Checking what Claude knows about your domain</div>
+      <div class="l-step-item active"><span class="step-dot active"></span> Generating expected prompts &amp; suggestions</div>
+      <div class="l-step-item" id="l-rank-step"><span class="step-dot"></span> Running prompt ranking check</div>
+    </div>
   </div>
 </div>
 
 <!-- ══ RESULTS PAGE ══ -->
 <div id="page-results" class="hidden">
-  <div class="results-wrap">
+  <div class="rpt-wrap">
 
-    <div class="results-topbar">
-      <div>
-        <div class="results-heading">Claude AI Rankings</div>
-        <div class="query-box">
-          <span class="qb-label">Query</span>
-          <span class="qb-text" id="r-query"></span>
+    <!-- Top bar -->
+    <div class="rpt-topbar">
+      <div class="domain-display">
+        <div class="domain-icon" id="r-icon">W</div>
+        <div>
+          <div class="domain-name" id="r-domain"></div>
+          <div class="domain-sub" id="r-tagline"></div>
         </div>
       </div>
       <button class="btn-new" id="btn-new">↩ New Check</button>
     </div>
 
-    <div class="claude-panel" id="claude-panel">
-      <!-- populated by JS -->
-    </div>
+    <!-- Quick stats bar -->
+    <div class="score-bar" id="score-bar"></div>
+
+    <!-- Sections injected here -->
+    <div id="sections-wrap"></div>
 
   </div>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
-const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const esc = t => String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
 function showPage(id){
   ['page-form','page-loading','page-results'].forEach(p =>
     document.getElementById(p).classList.toggle('hidden', p !== id));
 }
 
-function renderPanel(data, domain) {
-  const panel = $('claude-panel');
+/* ── Helpers ── */
+function confidenceColor(level){
+  return {high:'#4ade80',medium:'#fbbf24',low:'#f97316',unknown:'#f87171'}[level] || '#8ba4c4';
+}
+function confidencePct(level){
+  return {high:90,medium:55,low:25,unknown:8}[level] || 8;
+}
+function priorityClass(p){ return {high:'sug-p-high',medium:'sug-p-medium',low:'sug-p-low'}[p]||'sug-p-low'; }
+function prioChip(p){ return {high:'ph',medium:'pm',low:'pl'}[p]||'pl'; }
+function likelihoodClass(l){ return {high:'lh-high',medium:'lh-medium',low:'lh-low'}[l]||'lh-low'; }
 
-  /* ── error / no-key states ── */
-  if (data.status === 'no_key' || data.status === 'error') {
-    const isKey = data.status === 'no_key';
-    panel.innerHTML = `
-      <div class="panel-header">
-        <div class="claude-icon">C</div>
-        <div class="panel-info">
-          <div class="panel-name">Claude</div>
-          <div class="panel-sub">Anthropic · Claude Sonnet</div>
-        </div>
-      </div>
-      <div class="state-card">
-        <div class="state-icon">${isKey ? '🔑' : '⚠️'}</div>
-        <div class="state-title">${isKey ? 'API Key Required' : 'Query Failed'}</div>
-        <div class="state-desc">${esc(data.error_detail || 'Unknown error')}</div>
-        ${isKey ? '<div class="state-env">ANTHROPIC_API_KEY</div>' : ''}
+/* ── Build score chips ── */
+function buildScoreBar(dk, promptRanking) {
+  const conf = dk.confidence_level || 'unknown';
+  const pct  = confidencePct(conf);
+  const col  = confidenceColor(conf);
+  const isKnown = dk.is_known;
+  const services = (dk.services||[]).length;
+  const facts    = (dk.key_facts||[]).length;
+
+  let rankChip = '';
+  if (promptRanking) {
+    const r = promptRanking.domain_rank;
+    rankChip = `
+      <div class="score-chip">
+        <div class="score-chip-num" style="color:${r ? '#4ade80':'#f87171'}">${r ? '#'+r : '—'}</div>
+        <div class="score-chip-lbl"><strong>Query Rank</strong>out of top 10</div>
       </div>`;
-    return;
   }
 
-  const rankings    = data.rankings || [];
-  const domainRank  = data.domain_rank;
-  const intent      = data.query_intent || '';
-  const checkedDomain = data.domain || domain;
+  return `
+    <div class="score-chip">
+      <div class="score-chip-num" style="color:${isKnown?'#4ade80':'#f87171'}">${isKnown?'✓':'✕'}</div>
+      <div class="score-chip-lbl"><strong>AI Indexed</strong>${isKnown?'Known by Claude':'Not in Claude data'}</div>
+    </div>
+    <div class="score-chip">
+      <div class="score-chip-num" style="color:${col}">${pct}%</div>
+      <div class="score-chip-lbl"><strong>AI Confidence</strong>${conf.charAt(0).toUpperCase()+conf.slice(1)} level</div>
+    </div>
+    <div class="score-chip">
+      <div class="score-chip-num" style="color:#8b5cf6">${services}</div>
+      <div class="score-chip-lbl"><strong>Services</strong>indexed on Claude</div>
+    </div>
+    <div class="score-chip">
+      <div class="score-chip-num" style="color:#3b9eff">${facts}</div>
+      <div class="score-chip-lbl"><strong>Key Facts</strong>in AI training data</div>
+    </div>
+    ${rankChip}`;
+}
 
-  /* ── Clean display domain ── */
-  const dispDomain = checkedDomain
-    ? checkedDomain.replace(/^https?:\/\//i,'').replace(/^www\./i,'').replace(/\/+$/,'')
-    : '';
+/* ── Section 1: AI Profile ── */
+function buildProfile(dk) {
+  const conf     = dk.confidence_level || 'unknown';
+  const col      = confidenceColor(conf);
+  const pct      = confidencePct(conf);
+  const services = (dk.services||[]).map(s=>`<span class="tag purple-t">${esc(s)}</span>`).join('');
+  const indexed  = (dk.indexed_topics||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('');
+  const strengths= (dk.unique_strengths||[]).map(s=>
+    `<div class="fact-item"><span class="fact-icon" style="color:#4ade80">✓</span>${esc(s)}</div>`).join('');
+  const facts    = (dk.key_facts||[]).map(f=>
+    `<div class="fact-item"><span class="fact-icon" style="color:#3b9eff">•</span>${esc(f)}</div>`).join('');
+  const gaps     = (dk.data_gaps||[]).map(g=>
+    `<div class="gap-item"><span style="flex-shrink:0">⚠</span>${esc(g)}</div>`).join('');
 
-  /* ── Position banner ── */
-  let bannerHtml = '';
-  if (checkedDomain) {
-    if (domainRank) {
-      bannerHtml = `
-        <div class="position-banner pos-banner-found">
-          <div class="pos-rank-big">#${domainRank}</div>
-          <div class="pos-info">
-            <div class="pos-title">Your website is ranked on Claude</div>
-            <div class="pos-sub">Claude places <strong style="color:#fff">${esc(dispDomain)}</strong> at position #${domainRank} out of 10 for this query.</div>
-            <span class="pos-domain-chip">✓ Found at rank #${domainRank}</span>
+  const confBadgeColor = confidenceColor(conf);
+
+  return `
+    <div class="sec-card">
+      <div class="sec-header purple">
+        <span class="sec-icon">🧠</span>
+        <span class="sec-title">Claude AI Knowledge Profile</span>
+        <span class="sec-badge" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.25)">${esc(dk.industry||'Unknown Industry')}</span>
+      </div>
+      <div class="sec-body">
+        ${dk.description ? `<div class="description-block">${esc(dk.description)}</div>` : ''}
+
+        <div class="profile-grid">
+          ${dk.name       ? `<div class="profile-row"><span class="pr-label">Brand Name</span><span class="pr-val">${esc(dk.name)}</span></div>` : ''}
+          ${dk.industry   ? `<div class="profile-row"><span class="pr-label">Industry</span><span class="pr-val">${esc(dk.industry)}${dk.sub_industry?` · ${esc(dk.sub_industry)}`:''}</span></div>` : ''}
+          ${dk.location   ? `<div class="profile-row"><span class="pr-label">Location</span><span class="pr-val">📍 ${esc(dk.location)}</span></div>` : ''}
+          ${dk.founded    ? `<div class="profile-row"><span class="pr-label">Founded</span><span class="pr-val">${esc(dk.founded)}</span></div>` : ''}
+          ${dk.target_audience ? `<div class="profile-row" style="grid-column:1/-1"><span class="pr-label">Target Audience</span><span class="pr-val">${esc(dk.target_audience)}</span></div>` : ''}
+          <div class="profile-row" style="grid-column:1/-1">
+            <span class="pr-label">AI Confidence Level</span>
+            <div class="confidence-bar-wrap" style="margin-top:4px">
+              <div class="confidence-track">
+                <div class="confidence-fill" style="width:${pct}%;background:${col}"></div>
+              </div>
+              <span style="font-size:12px;font-weight:700;color:${col}">${conf.toUpperCase()} (${pct}%)</span>
+            </div>
           </div>
-        </div>`;
-    } else {
-      bannerHtml = `
-        <div class="position-banner pos-banner-notfound">
-          <div class="pos-rank-notfound">—</div>
-          <div class="pos-info">
-            <div class="pos-title">Your website was not found</div>
-            <div class="pos-sub"><strong style="color:#fff">${esc(dispDomain)}</strong> does not appear in Claude's top 10 results for this query.</div>
-            <span class="pos-domain-chip pos-domain-chip-nf">✕ Not in top 10</span>
-          </div>
-        </div>`;
-    }
-  }
+        </div>
 
-  /* ── Ranking rows ── */
+        ${services ? `<span class="sub-label">Services Indexed on Claude</span><div class="tags-wrap">${services}</div>` : ''}
+        ${indexed  ? `<span class="sub-label">Topic Areas Associated</span><div class="tags-wrap">${indexed}</div>` : ''}
+
+        ${strengths ? `<span class="sub-label">Unique Strengths Claude Knows</span><div class="facts-list">${strengths}</div>` : ''}
+        ${facts     ? `<span class="sub-label">Key Facts in AI Training Data</span><div class="facts-list" style="margin-top:0">${facts}</div>` : ''}
+        ${gaps      ? `<span class="sub-label" style="color:#fbbf24">⚠ Data Gaps — What Claude Doesn't Know</span><div class="gaps-list">${gaps}</div>` : ''}
+      </div>
+    </div>`;
+}
+
+/* ── Section 2: Prompt Ranking ── */
+function buildRanking(pr, domain) {
+  if (!pr) return '';
+  const rankings = pr.rankings || [];
+  const rank     = pr.domain_rank;
+  const dispDom  = domain.replace(/^https?:\/\//i,'').replace(/^www\./i,'').replace(/\/+$/,'');
+
+  const banner = rank
+    ? `<div class="pos-banner found">
+        <div class="pos-num" style="color:#4ade80">#${rank}</div>
+        <div class="pos-info">
+          <div class="pos-title">Your domain is ranked on Claude</div>
+          <div class="pos-sub">Claude places <strong style="color:#fff">${esc(dispDom)}</strong> at position #${rank} of 10 for this query.</div>
+          <span class="pos-chip f">✓ Found at rank #${rank}</span>
+        </div>
+       </div>`
+    : `<div class="pos-banner notfound">
+        <div class="pos-num" style="color:#f87171">—</div>
+        <div class="pos-info">
+          <div class="pos-title">Not found in Claude's top 10</div>
+          <div class="pos-sub"><strong style="color:#fff">${esc(dispDom)}</strong> did not appear in Claude's recommendations for this query.</div>
+          <span class="pos-chip nf">✕ Not in top 10</span>
+        </div>
+       </div>`;
+
+  const intentRow = pr.query_intent
+    ? `<div class="intent-row"><span class="intent-lbl">Intent</span><span>${esc(pr.query_intent)}</span></div>` : '';
+
   const rows = rankings.map(item => {
-    const isYours = domainRank && item.rank === domainRank;
-    const numClass = isYours ? 'is-yours-num' : (item.rank <= 3 ? 'top3' : '');
-    const rowClass = isYours ? 'rank-item is-yours' : 'rank-item';
+    const isYours  = rank && item.rank === rank;
+    const numCls   = isYours ? 'you' : item.rank <= 3 ? 't3' : '';
+    const rowCls   = isYours ? 'rank-row yours' : 'rank-row';
     return `
-      <div class="${rowClass}">
-        <div class="rank-num ${numClass}">${item.rank}</div>
-        <div class="rank-content">
-          <div class="rank-header">
-            <span class="rank-title">${esc(item.title || '—')}</span>
-            ${isYours ? '<span class="yours-chip">★ Your Site</span>' : ''}
+      <div class="${rowCls}">
+        <div class="rnum ${numCls}">${item.rank}</div>
+        <div class="rinfo">
+          <div class="rinfo-top">
+            <span class="rtitle">${esc(item.title||'—')}</span>
+            ${isYours ? '<span class="your-chip">★ Your Site</span>' : ''}
           </div>
-          <div class="rank-domain">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            ${esc(item.domain || '—')}
+          <div class="rdomain">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            ${esc(item.domain||'—')}
           </div>
-          <div class="rank-desc">${esc(item.description || '')}</div>
+          <div class="rdesc">${esc(item.description||'')}</div>
         </div>
       </div>`;
   }).join('');
 
-  panel.innerHTML = `
-    <div class="panel-header">
-      <div class="claude-icon">C</div>
-      <div class="panel-info">
-        <div class="panel-name">Claude</div>
-        <div class="panel-sub">Anthropic · Claude Sonnet · Top 10 Rankings</div>
+  return `
+    <div class="sec-card">
+      <div class="sec-header blue">
+        <span class="sec-icon">📊</span>
+        <span class="sec-title">Claude Ranking — "${esc(pr.prompt)}"</span>
+        ${rank ? `<span class="sec-badge" style="background:rgba(74,222,128,.1);color:#4ade80;border:1px solid rgba(74,222,128,.2)">Rank #${rank}</span>`
+               : `<span class="sec-badge" style="background:rgba(239,68,68,.08);color:#f87171;border:1px solid rgba(239,68,68,.15)">Not Found</span>`}
       </div>
-    </div>
-    ${intent ? `
-    <div class="intent-strip">
-      <span class="intent-label">Intent</span>
-      <span>${esc(intent)}</span>
-    </div>` : ''}
-    ${bannerHtml}
-    <div class="rankings-list">${rows}</div>`;
+      <div class="sec-body">
+        ${banner}
+        ${intentRow}
+        <div class="rank-list">${rows || '<div class="no-data">No ranking data available.</div>'}</div>
+      </div>
+    </div>`;
 }
 
-async function runCheck() {
-  const prompt = $('f-prompt').value.trim();
-  const domain = $('f-domain').value.trim();
+/* ── Section 3: Expected Prompts ── */
+function buildExpectedPrompts(prompts) {
+  if (!prompts || !prompts.length) return '';
+  const rows = prompts.map(p => `
+    <div class="prompt-row">
+      <div class="likelihood-badge ${likelihoodClass(p.likelihood)}">${esc(p.likelihood||'?')}</div>
+      <div style="flex:1;min-width:0">
+        <div class="prompt-text">"${esc(p.prompt)}"</div>
+        <div class="prompt-reason">${esc(p.reason||'')}</div>
+        ${p.intent ? `<span class="intent-tag">${esc(p.intent)}</span>` : ''}
+      </div>
+    </div>`).join('');
 
-  if (!prompt) {
-    $('f-prompt').classList.add('err');
-    $('e-prompt').style.display = 'block';
-    $('f-prompt').focus();
+  return `
+    <div class="sec-card">
+      <div class="sec-header cyan">
+        <span class="sec-icon">🔍</span>
+        <span class="sec-title">Prompts That Can Surface Your Domain on Claude</span>
+        <span class="sec-badge" style="background:rgba(6,182,212,.1);color:#22d3ee;border:1px solid rgba(6,182,212,.2)">${prompts.length} queries</span>
+      </div>
+      <div class="sec-body">
+        <div class="prompt-list">${rows}</div>
+      </div>
+    </div>`;
+}
+
+/* ── Section 4: AI Suggestions ── */
+function buildSuggestions(suggestions) {
+  if (!suggestions || !suggestions.length) return '';
+  const rows = suggestions.map((s, i) => `
+    <div class="sug-row">
+      <div class="sug-num ${priorityClass(s.priority)}">${i+1}</div>
+      <div class="sug-content">
+        <div class="sug-meta">
+          <span class="sug-title">${esc(s.title)}</span>
+          <span class="cat-chip">${esc(s.category||'General')}</span>
+          <span class="prio-chip ${prioChip(s.priority)}">${esc(s.priority||'medium')}</span>
+        </div>
+        <div class="sug-desc">${esc(s.description)}</div>
+      </div>
+    </div>`).join('');
+
+  return `
+    <div class="sec-card">
+      <div class="sec-header amber">
+        <span class="sec-icon">🚀</span>
+        <span class="sec-title">How to Improve AI Visibility &amp; Indexing</span>
+        <span class="sec-badge" style="background:rgba(251,191,36,.1);color:#fbbf24;border:1px solid rgba(251,191,36,.2)">${suggestions.length} tips</span>
+      </div>
+      <div class="sec-body">
+        <div class="sug-list">${rows}</div>
+      </div>
+    </div>`;
+}
+
+/* ── Render full results ── */
+function renderResults(data) {
+  const dk      = data.domain_knowledge || {};
+  const dispDom = data.domain.replace(/^https?:\/\//i,'').replace(/^www\./i,'').replace(/\/+$/,'');
+
+  // Top bar
+  $('r-icon').textContent = dispDom.charAt(0).toUpperCase();
+  $('r-domain').textContent = dispDom;
+  $('r-tagline').textContent = dk.tagline || dk.industry || 'AI Visibility Report';
+
+  // Score chips
+  $('score-bar').innerHTML = buildScoreBar(dk, data.prompt_ranking);
+
+  // Sections
+  const wrap = $('sections-wrap');
+  wrap.innerHTML =
+    buildProfile(dk) +
+    buildRanking(data.prompt_ranking, data.domain) +
+    buildExpectedPrompts(data.expected_prompts) +
+    buildSuggestions(data.ai_suggestions);
+}
+
+/* ── Error / no-key state ── */
+function renderError(data) {
+  const isKey = data.status === 'no_key';
+  $('score-bar').innerHTML = '';
+  $('r-icon').textContent  = '!';
+  $('r-domain').textContent = 'Analysis Failed';
+  $('r-tagline').textContent = '';
+  $('sections-wrap').innerHTML = `
+    <div class="sec-card">
+      <div class="sec-header purple">
+        <span class="sec-icon">${isKey?'🔑':'⚠️'}</span>
+        <span class="sec-title">${isKey?'API Key Required':'Query Failed'}</span>
+      </div>
+      <div class="sec-body" style="text-align:center;padding:40px 24px">
+        <div style="font-size:40px;margin-bottom:16px">${isKey?'🔑':'⚠️'}</div>
+        <div style="font-size:14px;font-weight:700;color:var(--sub);margin-bottom:8px">${isKey?'API Key Required':'Something Went Wrong'}</div>
+        <div style="font-size:13px;color:var(--muted);max-width:360px;margin:0 auto;line-height:1.7">${esc(data.error_detail||'Unknown error')}</div>
+        ${isKey?'<div style="margin-top:16px;font-family:monospace;font-size:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:6px 14px;display:inline-block;color:var(--muted)">ANTHROPIC_API_KEY</div>':''}
+      </div>
+    </div>`;
+}
+
+/* ── Main flow ── */
+async function runCheck() {
+  const domain = $('f-domain').value.trim();
+  const prompt = $('f-prompt').value.trim();
+
+  if (!domain) {
+    $('f-domain').classList.add('err');
+    $('e-domain').style.display = 'block';
+    $('f-domain').focus();
     return;
   }
-  $('f-prompt').classList.remove('err');
-  $('e-prompt').style.display = 'none';
+  $('f-domain').classList.remove('err');
+  $('e-domain').style.display = 'none';
+
+  // Update loading UI
+  const rankStep = $('l-rank-step');
+  if (prompt) {
+    rankStep.classList.add('active');
+    rankStep.querySelector('.step-dot').classList.add('active');
+  }
 
   showPage('page-loading');
 
   try {
     const res  = await fetch('/api/ai_rank', {
       method:  'POST',
-      headers: {'Content-Type': 'application/json'},
-      body:    JSON.stringify({ prompt, domain }),
+      headers: {'Content-Type':'application/json'},
+      body:    JSON.stringify({ domain, prompt }),
     });
     const data = await res.json();
 
     if (!data.ok) throw new Error(data.error || 'Server error');
 
-    $('r-query').textContent = prompt;
-    renderPanel(data, domain);
     showPage('page-results');
+
+    if (data.status === 'success') {
+      renderResults(data);
+    } else {
+      renderError(data);
+    }
 
   } catch (err) {
     showPage('page-form');
@@ -518,9 +681,13 @@ async function runCheck() {
 }
 
 $('btn-check').addEventListener('click', runCheck);
-$('btn-new').addEventListener('click', () => showPage('page-form'));
-$('f-prompt').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) runCheck(); });
-$('f-prompt').addEventListener('input', () => { $('f-prompt').classList.remove('err'); $('e-prompt').style.display='none'; });
+$('btn-new').addEventListener('click', () => {
+  $('l-rank-step').classList.remove('active');
+  $('l-rank-step').querySelector('.step-dot').classList.remove('active');
+  showPage('page-form');
+});
+$('f-domain').addEventListener('input', () => { $('f-domain').classList.remove('err'); $('e-domain').style.display='none'; });
+$('f-prompt').addEventListener('keydown', e => { if (e.key==='Enter'&&(e.ctrlKey||e.metaKey)) runCheck(); });
 </script>
 </body>
 </html>
