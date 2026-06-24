@@ -3,16 +3,17 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>AI Ranking Checker — See How AI Platforms Answer Your Queries</title>
+<title>AI Ranking Checker — See How Claude Ranks Websites for Any Query</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
 :root{
   --navy:#0a0f1e;--navy2:#0d1b2e;
-  --card:#111e30;--card2:#0d1425;
+  --card:#111e30;
   --blue:#3b9eff;--cyan:#00ccff;
-  --blue-glow:rgba(59,158,255,.35);
-  --border:rgba(255,255,255,.08);--border2:rgba(59,158,255,.25);
+  --purple:#8B5CF6;
+  --border:rgba(255,255,255,.08);
   --txt:#e8f0ff;--sub:#8ba4c4;--muted:#5a7a9e;
+  --green:#4ade80;
   --font:'Sora',sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -21,56 +22,45 @@ button{font-family:var(--font);cursor:pointer}
 .hidden{display:none!important}
 
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 @keyframes scaleIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
 
-/* ══ HERO / FORM PAGE ══ */
+/* ══ FORM PAGE ══ */
 #page-form{
   min-height:100vh;
   background:#0d1b2e;
   background-image:
     radial-gradient(ellipse 80% 60% at 50% -10%,rgba(30,90,160,.35) 0%,transparent 70%),
     url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.022'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  display:flex;flex-direction:column;align-items:center;
-  justify-content:flex-start;padding:0;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;padding:0;overflow:hidden;
 }
-.hero-top{
-  width:100%;text-align:center;padding:72px 20px 48px;
-  position:relative;z-index:2;
-}
+.hero-top{width:100%;text-align:center;padding:72px 20px 48px;position:relative;z-index:2}
 .hero-badge{
-  display:inline-flex;align-items:center;gap:7px;
-  background:rgba(59,158,255,.1);border:1px solid rgba(59,158,255,.25);
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.3);
   border-radius:20px;padding:5px 14px;
-  font-size:11px;font-weight:600;color:#60a5fa;
-  letter-spacing:.06em;text-transform:uppercase;
-  margin-bottom:22px;
+  font-size:11px;font-weight:600;color:#a78bfa;
+  letter-spacing:.06em;text-transform:uppercase;margin-bottom:22px;
 }
-.hero-badge-dot{width:6px;height:6px;border-radius:50%;background:#3b9eff;animation:spin 2s linear infinite}
+.badge-live-dot{
+  width:7px;height:7px;border-radius:50%;background:#8B5CF6;
+  box-shadow:0 0 6px rgba(139,92,246,.8);
+}
 .hero-headline{
   font-size:clamp(32px,5.5vw,58px);font-weight:800;line-height:1.1;
-  color:#ffffff;letter-spacing:-.03em;margin-bottom:18px;
+  color:#fff;letter-spacing:-.03em;margin-bottom:18px;
 }
 .hero-headline .accent{
-  background:linear-gradient(90deg,#3b9eff,#00ccff);
+  background:linear-gradient(90deg,#8B5CF6,#3b9eff);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
 }
-.hero-sub{
-  font-size:clamp(13px,2vw,16px);color:#8ba4c4;line-height:1.7;
-  max-width:520px;margin:0 auto;
+.hero-sub{font-size:clamp(13px,2vw,16px);color:#8ba4c4;line-height:1.7;max-width:520px;margin:0 auto}
+.hero-model-pill{
+  display:inline-flex;align-items:center;gap:8px;margin-top:24px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  border-radius:20px;padding:7px 16px;font-size:12px;color:var(--sub);
 }
-
-/* ── Platform pills ── */
-.platform-pills{
-  display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:28px;
-}
-.pill{
-  display:flex;align-items:center;gap:7px;
-  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
-  border-radius:20px;padding:6px 14px;font-size:12px;font-weight:500;color:var(--sub);
-}
-.pill-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.pill.active{border-color:rgba(59,158,255,.3);background:rgba(59,158,255,.08);color:#7dd3fc}
+.model-dot{width:8px;height:8px;border-radius:50%;background:#8B5CF6;flex-shrink:0}
 
 /* ── FORM CARD ── */
 .form-card{
@@ -78,34 +68,26 @@ button{font-family:var(--font);cursor:pointer}
   background:#111e30;border:1px solid rgba(255,255,255,.08);
   border-radius:18px;padding:32px 32px 28px;
   position:relative;z-index:2;
-  box-shadow:0 24px 80px rgba(0,0,0,.5);
-  margin:0 20px 48px;
+  box-shadow:0 24px 80px rgba(0,0,0,.5);margin:0 20px 48px;
 }
 .flabel{
   display:block;font-size:10px;font-weight:700;
-  letter-spacing:.1em;text-transform:uppercase;
-  color:#5a7a9e;margin-bottom:6px;
+  letter-spacing:.1em;text-transform:uppercase;color:#5a7a9e;margin-bottom:6px;
 }
-.opt-tag{
-  font-size:9.5px;font-weight:500;letter-spacing:0;text-transform:none;
-  color:var(--muted);margin-left:6px;
-}
-input[type=url],input[type=text]{
-  width:100%;background:#0d1b2e;
-  border:1px solid rgba(255,255,255,.1);border-radius:10px;
-  padding:12px 14px;font-size:14px;font-family:var(--font);
-  color:#e8f0ff;outline:none;
-  transition:border-color .2s,box-shadow .2s;
+.opt-tag{font-size:9.5px;font-weight:500;letter-spacing:0;text-transform:none;color:var(--muted);margin-left:6px}
+input[type=url]{
+  width:100%;background:#0d1b2e;border:1px solid rgba(255,255,255,.1);
+  border-radius:10px;padding:12px 14px;font-size:14px;font-family:var(--font);
+  color:#e8f0ff;outline:none;transition:border-color .2s,box-shadow .2s;
 }
 textarea{
-  width:100%;background:#0d1b2e;
-  border:1px solid rgba(255,255,255,.1);border-radius:10px;
-  padding:12px 14px;font-size:14px;font-family:var(--font);
-  color:#e8f0ff;outline:none;resize:vertical;min-height:96px;
+  width:100%;background:#0d1b2e;border:1px solid rgba(255,255,255,.1);
+  border-radius:10px;padding:12px 14px;font-size:14px;font-family:var(--font);
+  color:#e8f0ff;outline:none;resize:vertical;min-height:90px;
   transition:border-color .2s,box-shadow .2s;line-height:1.6;
 }
 input::placeholder,textarea::placeholder{color:#3a5270}
-input:focus,textarea:focus{border-color:#3b9eff;box-shadow:0 0 0 3px rgba(59,158,255,.18)}
+input:focus,textarea:focus{border-color:#8B5CF6;box-shadow:0 0 0 3px rgba(139,92,246,.18)}
 input.err,textarea.err{border-color:#ef4444}
 .fgroup{margin-bottom:18px}
 .errmsg{color:#ef4444;font-size:11px;margin-top:5px;display:none}
@@ -113,203 +95,203 @@ input.err,textarea.err{border-color:#ef4444}
 
 .btn-run{
   width:100%;padding:15px;
-  background:linear-gradient(90deg,#3b9eff,#00ccff);
+  background:linear-gradient(90deg,#8B5CF6,#3b9eff);
   border:none;border-radius:12px;color:#fff;
   font-family:var(--font);font-size:15px;font-weight:700;
-  letter-spacing:.01em;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:9px;
-  margin-top:4px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;
   transition:opacity .15s,box-shadow .15s,transform .15s;
-  box-shadow:0 4px 24px rgba(59,158,255,.35);
+  box-shadow:0 4px 24px rgba(139,92,246,.35);
 }
-.btn-run:hover{opacity:.92;transform:translateY(-1px);box-shadow:0 8px 32px rgba(59,158,255,.45)}
+.btn-run:hover{opacity:.92;transform:translateY(-1px);box-shadow:0 8px 32px rgba(139,92,246,.45)}
 .btn-run:active{transform:translateY(0)}
 .btn-run:disabled{opacity:.45;cursor:not-allowed;transform:none}
 
-/* ── Trust bar ── */
 .trust-bar{
   width:100%;border-top:1px solid rgba(255,255,255,.06);
   padding:14px 20px;display:flex;align-items:center;
-  justify-content:center;gap:28px;flex-wrap:wrap;
-  position:relative;z-index:2;margin-top:auto;
+  justify-content:center;gap:28px;flex-wrap:wrap;margin-top:auto;
 }
 .trust-item{font-size:12px;color:#3d5a78;display:flex;align-items:center;gap:6px}
-.trust-item .tck{color:#3b9eff;font-size:11px;font-weight:700}
+.tck{color:#8B5CF6;font-size:11px;font-weight:700}
 
 /* ══ LOADING PAGE ══ */
 #page-loading{
   min-height:100vh;display:flex;align-items:center;justify-content:center;
   padding:32px 16px;
-  background:radial-gradient(ellipse 80% 60% at 50% 20%,#0d2045 0%,var(--navy) 70%);
+  background:radial-gradient(ellipse 80% 60% at 50% 20%,#1a0d35 0%,var(--navy) 70%);
 }
 .load-card{
-  background:rgba(255,255,255,.04);border:1px solid var(--border);
-  border-radius:20px;padding:46px 38px;max-width:440px;width:100%;
-  text-align:center;backdrop-filter:blur(20px);
-  box-shadow:0 24px 48px rgba(0,0,0,.4);animation:scaleIn .4s ease;
+  background:rgba(255,255,255,.04);border:1px solid rgba(139,92,246,.2);
+  border-radius:20px;padding:46px 38px;max-width:420px;width:100%;
+  text-align:center;box-shadow:0 24px 48px rgba(0,0,0,.4);animation:scaleIn .4s ease;
 }
 .spin-wrap{position:relative;width:72px;height:72px;margin:0 auto 26px}
-.spin-outer{width:72px;height:72px;border:3px solid rgba(255,255,255,.08);border-top-color:#3b9eff;border-radius:50%;animation:spin .9s linear infinite;position:absolute}
-.spin-inner{width:46px;height:46px;border:3px solid transparent;border-top-color:#00ccff;border-radius:50%;animation:spin .6s linear infinite reverse;position:absolute;top:13px;left:13px}
-.spin-dot{width:8px;height:8px;border-radius:50%;background:#3b9eff;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+.spin-outer{width:72px;height:72px;border:3px solid rgba(255,255,255,.08);border-top-color:#8B5CF6;border-radius:50%;animation:spin .9s linear infinite;position:absolute}
+.spin-inner{width:46px;height:46px;border:3px solid transparent;border-top-color:#3b9eff;border-radius:50%;animation:spin .6s linear infinite reverse;position:absolute;top:13px;left:13px}
+.spin-dot{width:8px;height:8px;border-radius:50%;background:#8B5CF6;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
 .l-title{font-size:17px;font-weight:700;color:#fff;margin-bottom:7px}
-.l-step{font-size:12.5px;color:var(--sub);min-height:20px}
+.l-step{font-size:12.5px;color:var(--sub)}
 
 /* ══ RESULTS PAGE ══ */
 #page-results{
-  min-height:100vh;
-  background:#0a0f1e;
-  padding:40px 16px 64px;
+  min-height:100vh;background:#0a0f1e;padding:40px 16px 64px;
 }
-.results-wrap{max-width:980px;margin:0 auto}
-.results-header{
+.results-wrap{max-width:800px;margin:0 auto}
+
+/* Top bar */
+.results-topbar{
   display:flex;align-items:flex-start;justify-content:space-between;
-  margin-bottom:28px;gap:14px;flex-wrap:wrap;
+  gap:14px;flex-wrap:wrap;margin-bottom:24px;
 }
-.results-meta{}
-.results-title{font-size:21px;font-weight:700;color:#fff;margin-bottom:8px}
-.results-prompt-box{
-  display:flex;align-items:flex-start;gap:8px;
+.results-heading{font-size:20px;font-weight:700;color:#fff;margin-bottom:8px}
+.query-box{
+  display:flex;align-items:flex-start;gap:9px;
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
-  border-radius:10px;padding:10px 14px;max-width:680px;
+  border-radius:10px;padding:10px 14px;max-width:640px;
 }
-.rp-label{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-top:2px;flex-shrink:0}
-.rp-text{font-size:13px;color:var(--sub);line-height:1.55}
-.btn-new-check{
+.qb-label{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);flex-shrink:0;margin-top:2px}
+.qb-text{font-size:13px;color:var(--sub);line-height:1.55}
+.btn-new{
   background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
-  border-radius:10px;padding:11px 20px;
-  color:var(--txt);font-size:13px;font-weight:500;
-  transition:background .15s;white-space:nowrap;flex-shrink:0;
+  border-radius:10px;padding:11px 18px;color:var(--txt);
+  font-size:13px;font-weight:500;transition:background .15s;white-space:nowrap;flex-shrink:0;
 }
-.btn-new-check:hover{background:rgba(255,255,255,.12)}
+.btn-new:hover{background:rgba(255,255,255,.12)}
 
-/* ── Platform grid ── */
-.platform-grid{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:16px;
-}
-@media(max-width:620px){.platform-grid{grid-template-columns:1fr}}
-
-/* ── Platform card ── */
-.platform-card{
-  background:#111e30;border:1px solid rgba(255,255,255,.08);
+/* Claude panel header */
+.claude-panel{
+  background:#111e30;border:1px solid rgba(139,92,246,.2);
   border-radius:16px;overflow:hidden;
-  opacity:0;animation:fadeUp .45s ease forwards;
+  animation:fadeUp .4s ease forwards;
 }
-.platform-card:nth-child(1){animation-delay:.05s}
-.platform-card:nth-child(2){animation-delay:.12s}
-.platform-card:nth-child(3){animation-delay:.19s}
-.platform-card:nth-child(4){animation-delay:.26s}
-
-/* Accent left border per platform */
-.platform-card[data-platform="claude"]{border-left:3px solid #8B5CF6}
-.platform-card[data-platform="chatgpt"]{border-left:3px solid #10A37F}
-.platform-card[data-platform="gemini"]{border-left:3px solid #4285F4}
-.platform-card[data-platform="perplexity"]{border-left:3px solid #20B2AA}
-
-.pc-header{
-  padding:18px 20px 16px;
-  display:flex;align-items:flex-start;gap:14px;
-  border-bottom:1px solid rgba(255,255,255,.06);
+.panel-header{
+  padding:18px 24px;
+  display:flex;align-items:center;gap:14px;
+  background:rgba(139,92,246,.07);
+  border-bottom:1px solid rgba(139,92,246,.15);
 }
-.pc-icon{
-  width:44px;height:44px;border-radius:11px;
+.claude-icon{
+  width:44px;height:44px;border-radius:11px;flex-shrink:0;
+  background:linear-gradient(135deg,#8B5CF6,#6D28D9);
   display:flex;align-items:center;justify-content:center;
-  font-size:18px;font-weight:800;flex-shrink:0;color:#fff;
+  font-size:18px;font-weight:800;color:#fff;
 }
-.pc-info{flex:1;min-width:0}
-.pc-name{font-size:15px;font-weight:700;color:#fff;margin-bottom:1px}
-.pc-model{font-size:11px;color:var(--muted)}
-.pc-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.panel-info{flex:1}
+.panel-name{font-size:15px;font-weight:700;color:#fff}
+.panel-sub{font-size:11.5px;color:var(--muted);margin-top:1px}
 
-/* Badges */
-.badge{
-  display:inline-flex;align-items:center;gap:5px;
-  padding:3px 10px;border-radius:20px;
-  font-size:10.5px;font-weight:700;letter-spacing:.04em;
-  white-space:nowrap;
+/* Query intent strip */
+.intent-strip{
+  padding:12px 24px;
+  background:rgba(255,255,255,.02);
+  border-bottom:1px solid rgba(255,255,255,.06);
+  font-size:12px;color:var(--muted);display:flex;align-items:flex-start;gap:8px;
 }
-.badge-mentioned{background:rgba(16,185,129,.15);color:#34d399;border:1px solid rgba(16,185,129,.25)}
-.badge-not-found{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.18)}
-.badge-active{background:rgba(59,158,255,.12);color:#60a5fa;border:1px solid rgba(59,158,255,.22)}
-.badge-soon{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid rgba(255,255,255,.1)}
-.badge-error{background:rgba(239,68,68,.1);color:#fca5a5;border:1px solid rgba(239,68,68,.18)}
-.badge-nokey{background:rgba(245,158,11,.1);color:#fbbf24;border:1px solid rgba(245,158,11,.2)}
+.intent-label{font-weight:700;color:var(--sub);flex-shrink:0;text-transform:uppercase;font-size:10px;letter-spacing:.07em;margin-top:2px}
 
-/* Response body */
-.pc-body{padding:16px 20px 18px}
-.response-wrap{position:relative}
-.pc-response{
-  font-size:12.5px;color:var(--sub);line-height:1.75;
-  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
-  border-radius:8px;padding:13px 15px;
-  max-height:190px;overflow:hidden;
-  position:relative;white-space:pre-wrap;word-break:break-word;
-  transition:max-height .35s ease;
+/* Domain position banner */
+.position-banner{
+  margin:20px 24px 0;
+  border-radius:12px;padding:16px 20px;
+  display:flex;align-items:center;gap:16px;
 }
-.pc-response.expanded{max-height:1000px}
-.pc-fade{
-  position:absolute;bottom:0;left:0;right:0;height:56px;
-  background:linear-gradient(transparent,#111e30);
-  pointer-events:none;transition:opacity .3s;
-  border-radius:0 0 8px 8px;
+.pos-banner-found{
+  background:rgba(74,222,128,.08);
+  border:1px solid rgba(74,222,128,.2);
 }
-.pc-response.expanded + .pc-fade{opacity:0}
-.pc-toggle{
-  margin-top:9px;font-size:11.5px;color:#3b9eff;
-  background:none;border:none;padding:0;
-  display:flex;align-items:center;gap:4px;
-  transition:color .15s;
+.pos-banner-notfound{
+  background:rgba(239,68,68,.06);
+  border:1px solid rgba(239,68,68,.18);
 }
-.pc-toggle:hover{color:#60a5fa}
-
-/* Mention highlight */
-.mention-hl{
-  background:rgba(59,158,255,.18);color:#7dd3fc;
-  border-radius:3px;padding:0 2px;font-weight:600;
+.pos-rank-big{
+  font-size:36px;font-weight:800;line-height:1;
+  color:#4ade80;flex-shrink:0;
+}
+.pos-rank-notfound{font-size:28px;font-weight:800;color:#f87171}
+.pos-info{}
+.pos-title{font-size:14px;font-weight:700;color:#fff;margin-bottom:3px}
+.pos-sub{font-size:12px;color:var(--sub)}
+.pos-domain-chip{
+  margin-top:6px;display:inline-flex;align-items:center;gap:5px;
+  font-size:11.5px;font-weight:600;
+  background:rgba(74,222,128,.12);color:#4ade80;
+  border-radius:20px;padding:3px 10px;
+}
+.pos-domain-chip-nf{
+  background:rgba(239,68,68,.1);color:#f87171;
 }
 
-/* Coming-soon / no-key placeholder */
-.pc-placeholder{
-  padding:28px 20px;text-align:center;
+/* Rankings list */
+.rankings-list{padding:16px 24px 24px}
+.rank-item{
+  display:flex;align-items:flex-start;gap:14px;
+  padding:14px 0;border-bottom:1px solid rgba(255,255,255,.05);
+  position:relative;
 }
-.plh-icon{font-size:36px;margin-bottom:13px}
-.plh-title{font-size:13.5px;font-weight:600;color:var(--sub);margin-bottom:7px}
-.plh-desc{font-size:12px;color:var(--muted);line-height:1.7;max-width:280px;margin:0 auto}
-.plh-env{
-  display:inline-block;margin-top:13px;
-  font-size:11px;color:var(--muted);font-family:monospace;
-  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
-  border-radius:6px;padding:5px 12px;letter-spacing:.03em;
+.rank-item:last-child{border-bottom:none}
+
+/* Highlight user's domain */
+.rank-item.is-yours{
+  background:rgba(59,158,255,.05);
+  margin:0 -24px;
+  padding:14px 24px;
+  border-left:3px solid #3b9eff;
+  border-bottom:1px solid rgba(59,158,255,.12);
 }
 
-/* Domain notice */
-.domain-tip{
-  margin-top:11px;font-size:11.5px;color:var(--muted);
-  display:flex;align-items:flex-start;gap:7px;
-  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
-  border-radius:7px;padding:9px 12px;line-height:1.5;
+.rank-num{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;flex-shrink:0;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  color:var(--sub);margin-top:2px;
+}
+.rank-num.top3{
+  background:rgba(139,92,246,.15);border-color:rgba(139,92,246,.3);color:#a78bfa;
+}
+.rank-num.is-yours-num{
+  background:rgba(59,158,255,.15);border-color:rgba(59,158,255,.3);color:#60a5fa;
 }
 
-/* ── Summary bar ── */
-.summary-bar{
-  margin-bottom:18px;
-  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
-  border-radius:12px;padding:14px 20px;
-  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+.rank-content{flex:1;min-width:0}
+.rank-header{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px}
+.rank-title{font-size:14px;font-weight:600;color:#fff}
+.yours-chip{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:10px;font-weight:700;letter-spacing:.05em;
+  background:rgba(59,158,255,.15);color:#60a5fa;
+  border:1px solid rgba(59,158,255,.25);
+  border-radius:4px;padding:2px 7px;text-transform:uppercase;
 }
-.sb-item{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--sub)}
-.sb-num{font-size:20px;font-weight:700;color:#fff}
-.sb-div{width:1px;height:28px;background:rgba(255,255,255,.08)}
+.rank-domain{
+  font-size:12px;color:#4ade80;margin-bottom:5px;
+  display:flex;align-items:center;gap:5px;
+}
+.rank-desc{font-size:12.5px;color:var(--sub);line-height:1.65}
+
+/* Error / no-key states */
+.state-card{
+  padding:40px 24px;text-align:center;
+}
+.state-icon{font-size:40px;margin-bottom:14px}
+.state-title{font-size:15px;font-weight:700;color:var(--sub);margin-bottom:8px}
+.state-desc{font-size:12.5px;color:var(--muted);line-height:1.7;max-width:340px;margin:0 auto}
+.state-env{
+  display:inline-block;margin-top:14px;font-size:11.5px;font-family:monospace;
+  color:var(--muted);background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:5px 14px;
+}
 
 @media(max-width:520px){
   .form-card{padding:22px 18px 20px;margin:0 12px 32px}
   .hero-top{padding:52px 20px 36px}
   .trust-bar{gap:16px}
-  .results-header{flex-direction:column}
-  .pc-header{padding:14px 16px 12px}
-  .pc-body{padding:13px 16px 16px}
+  .results-topbar{flex-direction:column}
+  .panel-header{padding:14px 16px}
+  .rankings-list{padding:12px 16px 20px}
+  .rank-item.is-yours{margin:0 -16px;padding:12px 16px}
+  .position-banner{margin:16px 16px 0}
+  .intent-strip{padding:10px 16px}
 }
 </style>
 </head>
@@ -319,52 +301,42 @@ input.err,textarea.err{border-color:#ef4444}
 <div id="page-form">
   <div class="hero-top">
     <div class="hero-badge">
-      <span class="hero-badge-dot"></span>
-      GEO · Generative Engine Optimization
+      <span class="badge-live-dot"></span>
+      Claude AI · Ranking Checker
     </div>
-    <h1 class="hero-headline">Check your <span class="accent">AI rankings</span></h1>
-    <p class="hero-sub">Type any query and see how Claude, ChatGPT, Gemini, and Perplexity respond — and whether your website gets a mention.</p>
-    <div class="platform-pills">
-      <div class="pill active">
-        <span class="pill-dot" style="background:#8B5CF6"></span> Claude — Active
-      </div>
-      <div class="pill">
-        <span class="pill-dot" style="background:#10A37F"></span> ChatGPT — Soon
-      </div>
-      <div class="pill">
-        <span class="pill-dot" style="background:#4285F4"></span> Gemini — Soon
-      </div>
-      <div class="pill">
-        <span class="pill-dot" style="background:#20B2AA"></span> Perplexity — Soon
-      </div>
+    <h1 class="hero-headline">Where do you <span class="accent">rank on Claude?</span></h1>
+    <p class="hero-sub">Type any search query. Claude will rank the top 10 results — see exactly where your website appears and which position you hold.</p>
+    <div class="hero-model-pill">
+      <span class="model-dot"></span>
+      Powered by Claude Sonnet · Anthropic
     </div>
   </div>
 
   <div class="form-card">
     <div class="fgroup">
-      <label class="flabel" for="f-prompt">Your Query / Prompt</label>
-      <textarea id="f-prompt" placeholder="e.g. What are the best SEO audit tools?&#10;Best running shoes for beginners?&#10;Top project management software 2025?"></textarea>
-      <div class="errmsg" id="e-prompt">Please enter a query to check.</div>
-      <div class="hint">Tip: Use the exact query your target audience types. Press Ctrl+Enter to submit.</div>
+      <label class="flabel" for="f-prompt">Search Query</label>
+      <textarea id="f-prompt" placeholder="e.g. Best digital marketing agency in Noida&#10;Top SEO tools for small businesses&#10;Budget-friendly web design services"></textarea>
+      <div class="errmsg" id="e-prompt">Please enter a search query.</div>
+      <div class="hint">Tip: Use queries your customers actually search for. Ctrl+Enter to submit.</div>
     </div>
     <div class="fgroup">
       <label class="flabel" for="f-domain">
-        Your Website URL
-        <span class="opt-tag">(Optional — to detect if you're mentioned)</span>
+        Your Website
+        <span class="opt-tag">(Optional — to highlight your position)</span>
       </label>
       <input type="url" id="f-domain" placeholder="https://yourwebsite.com"/>
     </div>
     <button class="btn-run" id="btn-check">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      Check AI Rankings
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      Check Claude Rankings
     </button>
   </div>
 
   <div class="trust-bar">
-    <div class="trust-item"><span class="tck">✓</span> Live AI responses</div>
-    <div class="trust-item"><span class="tck">✓</span> Brand mention detection</div>
-    <div class="trust-item"><span class="tck">✓</span> No registration needed</div>
-    <div class="trust-item"><span class="tck">✓</span> 4 AI platforms</div>
+    <div class="trust-item"><span class="tck">✓</span> Real Claude rankings</div>
+    <div class="trust-item"><span class="tck">✓</span> Top 10 results</div>
+    <div class="trust-item"><span class="tck">✓</span> Your position highlighted</div>
+    <div class="trust-item"><span class="tck">✓</span> No signup needed</div>
   </div>
 </div>
 
@@ -376,161 +348,138 @@ input.err,textarea.err{border-color:#ef4444}
       <div class="spin-inner"></div>
       <div class="spin-dot"></div>
     </div>
-    <div class="l-title">Querying AI platforms...</div>
-    <div class="l-step" id="l-step">Sending your prompt to Claude...</div>
+    <div class="l-title">Asking Claude to rank results...</div>
+    <div class="l-step" id="l-step">Analyzing your query and building top 10 rankings...</div>
   </div>
 </div>
 
 <!-- ══ RESULTS PAGE ══ -->
 <div id="page-results" class="hidden">
   <div class="results-wrap">
-    <div class="results-header">
-      <div class="results-meta">
-        <div class="results-title">AI Platform Results</div>
-        <div class="results-prompt-box">
-          <div class="rp-label">Query</div>
-          <div class="rp-text" id="r-prompt-text"></div>
+
+    <div class="results-topbar">
+      <div>
+        <div class="results-heading">Claude AI Rankings</div>
+        <div class="query-box">
+          <span class="qb-label">Query</span>
+          <span class="qb-text" id="r-query"></span>
         </div>
       </div>
-      <button class="btn-new-check" id="btn-new">↩ New Check</button>
+      <button class="btn-new" id="btn-new">↩ New Check</button>
     </div>
 
-    <div class="summary-bar" id="summary-bar" style="display:none">
-      <div class="sb-item">
-        <div class="sb-num" id="sb-active">—</div>
-        <div>Platforms<br>Active</div>
-      </div>
-      <div class="sb-div"></div>
-      <div class="sb-item" id="sb-mention-wrap" style="display:none">
-        <div class="sb-num" id="sb-mentioned">—</div>
-        <div>Platforms<br>Mentioning You</div>
-      </div>
+    <div class="claude-panel" id="claude-panel">
+      <!-- populated by JS -->
     </div>
 
-    <div class="platform-grid" id="platform-grid"></div>
   </div>
 </div>
 
 <script>
-const $  = id => document.getElementById(id);
-const esc = t => t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const $ = id => document.getElementById(id);
+const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-const PLATFORMS = [
-  { key:'claude',     name:'Claude',     provider:'Anthropic',     model:'Claude Sonnet',   icon:'C',  iconBg:'linear-gradient(135deg,#8B5CF6,#6D28D9)' },
-  { key:'chatgpt',    name:'ChatGPT',    provider:'OpenAI',        model:'GPT-4o',           icon:'G',  iconBg:'linear-gradient(135deg,#10A37F,#059669)' },
-  { key:'gemini',     name:'Gemini',     provider:'Google',        model:'Gemini 1.5 Pro',   icon:'✦',  iconBg:'linear-gradient(135deg,#4285F4,#34A853)' },
-  { key:'perplexity', name:'Perplexity', provider:'Perplexity AI', model:'Sonar',            icon:'P',  iconBg:'linear-gradient(135deg,#20B2AA,#0D9488)' },
-];
-
-function showPage(id) {
+function showPage(id){
   ['page-form','page-loading','page-results'].forEach(p =>
-    document.getElementById(p).classList.toggle('hidden', p !== id)
-  );
+    document.getElementById(p).classList.toggle('hidden', p !== id));
 }
 
-function highlightDomain(text, domain) {
-  if (!domain) return esc(text);
-  const clean = domain.replace(/^https?:\/\//i,'').replace(/^www\./i,'').replace(/\/+$/,'');
-  const brand = clean.split('.')[0];
-  const pats  = [...new Set([clean, brand].filter(Boolean))]
-                  .map(p => p.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
-  if (!pats.length) return esc(text);
-  const re = new RegExp(`(${pats.join('|')})`, 'gi');
-  return esc(text).replace(re, m => `<span class="mention-hl">${m}</span>`);
-}
+function renderPanel(data, domain) {
+  const panel = $('claude-panel');
 
-function buildCard(platform, data, domain) {
-  const card = document.createElement('div');
-  card.className = 'platform-card';
-  card.dataset.platform = platform.key;
-
-  /* ── Header badges ── */
-  let badges = '';
-  if (data.status === 'success') {
-    if (domain) {
-      badges = data.mentioned
-        ? `<span class="badge badge-mentioned">✓ Mentioned${data.mention_count > 1 ? ' ×'+data.mention_count : ''}</span>`
-        : `<span class="badge badge-not-found">✕ Not Detected</span>`;
-    } else {
-      badges = `<span class="badge badge-active">✓ Active</span>`;
-    }
-  } else if (data.status === 'error') {
-    badges = `<span class="badge badge-error">⚠ Error</span>`;
-  } else if (data.status === 'no_key') {
-    badges = `<span class="badge badge-nokey">🔑 No API Key</span>`;
-  } else {
-    badges = `<span class="badge badge-soon">⏳ Coming Soon</span>`;
-  }
-
-  /* ── Body content ── */
-  let body = '';
-  if (data.status === 'success') {
-    const rid  = `resp-${platform.key}`;
-    const fid  = `fade-${platform.key}`;
-    const tid  = `toggle-${platform.key}`;
-    const html = highlightDomain(data.response, domain);
-    body = `
-      <div class="pc-body">
-        <div class="response-wrap">
-          <div class="pc-response" id="${rid}">${html}</div>
-          <div class="pc-fade" id="${fid}"></div>
+  /* ── error / no-key states ── */
+  if (data.status === 'no_key' || data.status === 'error') {
+    const isKey = data.status === 'no_key';
+    panel.innerHTML = `
+      <div class="panel-header">
+        <div class="claude-icon">C</div>
+        <div class="panel-info">
+          <div class="panel-name">Claude</div>
+          <div class="panel-sub">Anthropic · Claude Sonnet</div>
         </div>
-        <button class="pc-toggle" id="${tid}" onclick="toggleResp('${platform.key}')">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-          Show full response
-        </button>
-        ${!domain ? `<div class="domain-tip">💡 Add your website URL above to check if you appear in this response.</div>` : ''}
+      </div>
+      <div class="state-card">
+        <div class="state-icon">${isKey ? '🔑' : '⚠️'}</div>
+        <div class="state-title">${isKey ? 'API Key Required' : 'Query Failed'}</div>
+        <div class="state-desc">${esc(data.error_detail || 'Unknown error')}</div>
+        ${isKey ? '<div class="state-env">ANTHROPIC_API_KEY</div>' : ''}
       </div>`;
-  } else if (data.status === 'no_key') {
-    body = `
-      <div class="pc-placeholder">
-        <div class="plh-icon">🔑</div>
-        <div class="plh-title">API Key Required</div>
-        <div class="plh-desc">${data.error_detail ? esc(data.error_detail) : 'Add your Anthropic API key to Vercel environment variables to enable live Claude responses.'}</div>
-        <div class="plh-env">ANTHROPIC_API_KEY</div>
-      </div>`;
-  } else if (data.status === 'error') {
-    const detail = data.error_detail ? esc(data.error_detail) : 'Unknown error — check Vercel function logs for details.';
-    body = `
-      <div class="pc-placeholder">
-        <div class="plh-icon">⚠️</div>
-        <div class="plh-title">Query Failed</div>
-        <div class="plh-desc">${detail}</div>
-      </div>`;
-  } else {
-    const envMap = { chatgpt:'OPENAI_API_KEY', gemini:'GEMINI_API_KEY', perplexity:'PERPLEXITY_API_KEY' };
-    body = `
-      <div class="pc-placeholder">
-        <div class="plh-icon">🚧</div>
-        <div class="plh-title">Integration Coming Soon</div>
-        <div class="plh-desc">${platform.name} support is on the roadmap. Once the API key is configured, live responses will appear here automatically.</div>
-        ${envMap[platform.key] ? `<div class="plh-env">${envMap[platform.key]}</div>` : ''}
-      </div>`;
+    return;
   }
 
-  card.innerHTML = `
-    <div class="pc-header">
-      <div class="pc-icon" style="background:${platform.iconBg}">${platform.icon}</div>
-      <div class="pc-info">
-        <div class="pc-name">${platform.name}</div>
-        <div class="pc-model">${platform.provider} · ${data.model || platform.model}</div>
-        <div class="pc-badges">${badges}</div>
+  const rankings    = data.rankings || [];
+  const domainRank  = data.domain_rank;
+  const intent      = data.query_intent || '';
+  const checkedDomain = data.domain || domain;
+
+  /* ── Clean display domain ── */
+  const dispDomain = checkedDomain
+    ? checkedDomain.replace(/^https?:\/\//i,'').replace(/^www\./i,'').replace(/\/+$/,'')
+    : '';
+
+  /* ── Position banner ── */
+  let bannerHtml = '';
+  if (checkedDomain) {
+    if (domainRank) {
+      bannerHtml = `
+        <div class="position-banner pos-banner-found">
+          <div class="pos-rank-big">#${domainRank}</div>
+          <div class="pos-info">
+            <div class="pos-title">Your website is ranked on Claude</div>
+            <div class="pos-sub">Claude places <strong style="color:#fff">${esc(dispDomain)}</strong> at position #${domainRank} out of 10 for this query.</div>
+            <span class="pos-domain-chip">✓ Found at rank #${domainRank}</span>
+          </div>
+        </div>`;
+    } else {
+      bannerHtml = `
+        <div class="position-banner pos-banner-notfound">
+          <div class="pos-rank-notfound">—</div>
+          <div class="pos-info">
+            <div class="pos-title">Your website was not found</div>
+            <div class="pos-sub"><strong style="color:#fff">${esc(dispDomain)}</strong> does not appear in Claude's top 10 results for this query.</div>
+            <span class="pos-domain-chip pos-domain-chip-nf">✕ Not in top 10</span>
+          </div>
+        </div>`;
+    }
+  }
+
+  /* ── Ranking rows ── */
+  const rows = rankings.map(item => {
+    const isYours = domainRank && item.rank === domainRank;
+    const numClass = isYours ? 'is-yours-num' : (item.rank <= 3 ? 'top3' : '');
+    const rowClass = isYours ? 'rank-item is-yours' : 'rank-item';
+    return `
+      <div class="${rowClass}">
+        <div class="rank-num ${numClass}">${item.rank}</div>
+        <div class="rank-content">
+          <div class="rank-header">
+            <span class="rank-title">${esc(item.title || '—')}</span>
+            ${isYours ? '<span class="yours-chip">★ Your Site</span>' : ''}
+          </div>
+          <div class="rank-domain">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            ${esc(item.domain || '—')}
+          </div>
+          <div class="rank-desc">${esc(item.description || '')}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div class="panel-header">
+      <div class="claude-icon">C</div>
+      <div class="panel-info">
+        <div class="panel-name">Claude</div>
+        <div class="panel-sub">Anthropic · Claude Sonnet · Top 10 Rankings</div>
       </div>
     </div>
-    ${body}`;
-
-  return card;
-}
-
-function toggleResp(key) {
-  const el   = $(`resp-${key}`);
-  const fade = $(`fade-${key}`);
-  const btn  = $(`toggle-${key}`);
-  const exp  = el.classList.toggle('expanded');
-  if (fade) fade.style.opacity = exp ? '0' : '1';
-  btn.innerHTML = exp
-    ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg> Show less`
-    : `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg> Show full response`;
+    ${intent ? `
+    <div class="intent-strip">
+      <span class="intent-label">Intent</span>
+      <span>${esc(intent)}</span>
+    </div>` : ''}
+    ${bannerHtml}
+    <div class="rankings-list">${rows}</div>`;
 }
 
 async function runCheck() {
@@ -547,48 +496,21 @@ async function runCheck() {
   $('e-prompt').style.display = 'none';
 
   showPage('page-loading');
-  $('l-step').textContent = 'Sending your prompt to Claude...';
 
   try {
     const res  = await fetch('/api/ai_rank', {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {'Content-Type': 'application/json'},
       body:    JSON.stringify({ prompt, domain }),
     });
     const data = await res.json();
 
-    if (!data.ok) throw new Error(data.error || 'Unknown error');
+    if (!data.ok) throw new Error(data.error || 'Server error');
 
-    /* ── Populate results page ── */
-    $('r-prompt-text').textContent = prompt;
-    const grid = $('platform-grid');
-    grid.innerHTML = '';
-
-    let activeCount    = 0;
-    let mentionedCount = 0;
-
-    PLATFORMS.forEach(p => {
-      const pd = data.results[p.key];
-      if (!pd) return;
-      if (pd.status === 'success') {
-        activeCount++;
-        if (pd.mentioned) mentionedCount++;
-      }
-      grid.appendChild(buildCard(p, pd, domain));
-    });
-
-    /* Summary bar */
-    const sb = $('summary-bar');
-    $('sb-active').textContent = activeCount;
-    sb.style.display = 'flex';
-    if (domain) {
-      $('sb-mentioned').textContent = mentionedCount;
-      $('sb-mention-wrap').style.display = 'flex';
-    } else {
-      $('sb-mention-wrap').style.display = 'none';
-    }
-
+    $('r-query').textContent = prompt;
+    renderPanel(data, domain);
     showPage('page-results');
+
   } catch (err) {
     showPage('page-form');
     alert('Something went wrong: ' + err.message);
@@ -597,15 +519,8 @@ async function runCheck() {
 
 $('btn-check').addEventListener('click', runCheck);
 $('btn-new').addEventListener('click', () => showPage('page-form'));
-
-$('f-prompt').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) runCheck();
-});
-
-$('f-prompt').addEventListener('input', () => {
-  $('f-prompt').classList.remove('err');
-  $('e-prompt').style.display = 'none';
-});
+$('f-prompt').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) runCheck(); });
+$('f-prompt').addEventListener('input', () => { $('f-prompt').classList.remove('err'); $('e-prompt').style.display='none'; });
 </script>
 </body>
 </html>
