@@ -9,6 +9,7 @@
     { "src": "/api/audit_poll",  "dest": "/api/audit_poll.py" },
     { "src": "/api/audit_run",   "dest": "/api/audit_run.py" },
     { "src": "/api/send_email",  "dest": "/api/send_email.py" },
+    { "src": "/api/ai_rank",     "dest": "/api/ai_rank.py" },
     { "src": "/(.*)", "dest": "/public/$1" }
   ]
 }

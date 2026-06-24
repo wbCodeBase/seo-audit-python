@@ -135,3 +135,5 @@ Vercel Dashboard → Your Project → Settings → Domains
 ```json
 "headers": [{"source": "/(.*)", "headers": [{"key": "X-Frame-Options", "value": "ALLOWALL"}]}]
 ```
+
+
