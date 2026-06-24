@@ -4,6 +4,11 @@
     { "src": "api/*.py", "use": "@vercel/python" },
     { "src": "public/**", "use": "@vercel/static" }
   ],
+  "functions": {
+    "api/ai_rank.py":    { "maxDuration": 60 },
+    "api/audit_run.py":  { "maxDuration": 60 },
+    "api/audit_start.py":{ "maxDuration": 60 }
+  },
   "routes": [
     { "src": "/api/audit_start", "dest": "/api/audit_start.py" },
     { "src": "/api/audit_poll",  "dest": "/api/audit_poll.py" },

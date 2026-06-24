@@ -8,19 +8,44 @@ Coming soon: ChatGPT (OpenAI), Gemini (Google), Perplexity
 import json, os, re
 from http.server import BaseHTTPRequestHandler
 
+# Try the newer model first, fall back to the stable GA model
+CLAUDE_MODELS = [
+    "claude-sonnet-4-5",
+    "claude-3-5-sonnet-20241022",
+]
+
 
 def query_claude(prompt, api_key):
-    try:
-        import anthropic
-        client = anthropic.Anthropic(api_key=api_key)
-        resp = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=1024,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return "".join(b.text for b in resp.content if b.type == "text")
-    except Exception:
-        return None
+    """
+    Returns (response_text, error_message).
+    Tries each model in CLAUDE_MODELS until one works.
+    """
+    import anthropic
+    client = anthropic.Anthropic(api_key=api_key)
+
+    last_err = ""
+    for model in CLAUDE_MODELS:
+        try:
+            resp = client.messages.create(
+                model=model,
+                max_tokens=800,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            text = "".join(b.text for b in resp.content if b.type == "text")
+            return text, None
+        except anthropic.NotFoundError:
+            last_err = f"Model '{model}' not found, trying next..."
+            continue
+        except anthropic.AuthenticationError:
+            return None, "Invalid API key — check your ANTHROPIC_API_KEY environment variable."
+        except anthropic.RateLimitError:
+            return None, "Rate limit reached — try again in a few seconds."
+        except anthropic.APITimeoutError:
+            return None, "Claude API timed out — try a shorter prompt or try again."
+        except Exception as e:
+            return None, f"Claude API error: {type(e).__name__}: {str(e)}"
+
+    return None, f"No working model found. Last error: {last_err}"
 
 
 def detect_mentions(response_text, domain):
@@ -68,7 +93,7 @@ class handler(BaseHTTPRequestHandler):
             # ── Claude (Anthropic) ────────────────────────────────────────────
             anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
             if anthropic_key:
-                response_text = query_claude(prompt, anthropic_key)
+                response_text, err = query_claude(prompt, anthropic_key)
                 if response_text:
                     mentioned, count = detect_mentions(response_text, domain)
                     results["claude"] = {
@@ -82,15 +107,25 @@ class handler(BaseHTTPRequestHandler):
                     }
                 else:
                     results["claude"] = {
-                        "status": "error", "response": None,
-                        "mentioned": False, "mention_count": 0,
-                        "platform": "Claude", "provider": "Anthropic", "model": "Claude Sonnet",
+                        "status":        "error",
+                        "error_detail":  err or "Unknown error",
+                        "response":      None,
+                        "mentioned":     False,
+                        "mention_count": 0,
+                        "platform":      "Claude",
+                        "provider":      "Anthropic",
+                        "model":         "Claude Sonnet",
                     }
             else:
                 results["claude"] = {
-                    "status": "no_key", "response": None,
-                    "mentioned": False, "mention_count": 0,
-                    "platform": "Claude", "provider": "Anthropic", "model": "Claude Sonnet",
+                    "status":        "no_key",
+                    "error_detail":  "ANTHROPIC_API_KEY is not set in environment variables.",
+                    "response":      None,
+                    "mentioned":     False,
+                    "mention_count": 0,
+                    "platform":      "Claude",
+                    "provider":      "Anthropic",
+                    "model":         "Claude Sonnet",
                 }
 
             # ── ChatGPT (OpenAI) ──────────────────────────────────────────────

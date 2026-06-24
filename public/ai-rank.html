@@ -486,15 +486,16 @@ function buildCard(platform, data, domain) {
       <div class="pc-placeholder">
         <div class="plh-icon">🔑</div>
         <div class="plh-title">API Key Required</div>
-        <div class="plh-desc">Set your Anthropic API key as an environment variable to enable live Claude responses.</div>
+        <div class="plh-desc">${data.error_detail ? esc(data.error_detail) : 'Add your Anthropic API key to Vercel environment variables to enable live Claude responses.'}</div>
         <div class="plh-env">ANTHROPIC_API_KEY</div>
       </div>`;
   } else if (data.status === 'error') {
+    const detail = data.error_detail ? esc(data.error_detail) : 'Unknown error — check Vercel function logs for details.';
     body = `
       <div class="pc-placeholder">
         <div class="plh-icon">⚠️</div>
         <div class="plh-title">Query Failed</div>
-        <div class="plh-desc">There was a problem querying this platform. Please check your API key and try again.</div>
+        <div class="plh-desc">${detail}</div>
       </div>`;
   } else {
     const envMap = { chatgpt:'OPENAI_API_KEY', gemini:'GEMINI_API_KEY', perplexity:'PERPLEXITY_API_KEY' };
