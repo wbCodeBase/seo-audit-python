@@ -156,6 +156,7 @@ def _worker_ranking(prompt, api_key, bucket, key):
 
 
 def _find_rank(rankings, domain):
+    """Is this domain present as an entry in Claude's ranking answer? (domain-anchor check)"""
     if not domain or not rankings:
         return None
     clean = re.sub(r'^https?://', '', domain, flags=re.I)
@@ -169,38 +170,17 @@ def _find_rank(rankings, domain):
     return None
 
 
-def _normalize_domain(raw):
-    d = re.sub(r'^https?://', '', (raw or '').strip(), flags=re.I)
-    d = re.sub(r'^www\.', '', d, flags=re.I)
-    return d.split('/')[0].lower().strip()
-
-
-def _check_backlinks(rankings, backlinks_raw):
-    """Cross-reference user-supplied backlink domains against the domains
-    Claude actually surfaced in its ranking answer for the query."""
-    domains, seen = [], set()
-    for raw in re.split(r'[\n,]+', backlinks_raw):
-        d = _normalize_domain(raw)
-        if d and d not in seen:
-            seen.add(d)
-            domains.append(d)
-
-    ranked = [(_normalize_domain(item.get("domain", "")), item) for item in rankings]
-
-    matches, unmatched = [], []
-    for d in domains:
-        hit = next((item for rd, item in ranked if rd and (d == rd or d in rd or rd in d)), None)
-        if hit:
-            matches.append({"domain": d, "rank": hit["rank"], "title": hit.get("title", "")})
-        else:
-            unmatched.append(d)
-
-    return {
-        "total_checked": len(domains),
-        "matched_count":  len(matches),
-        "matches":        matches,
-        "unmatched":      unmatched,
-    }
+def _find_rank_by_brand(rankings, brand):
+    """Is this exact brand name present (as title or domain) in Claude's ranking answer?"""
+    if not brand or not rankings:
+        return None
+    needle = brand.strip().lower()
+    for item in rankings:
+        d = item.get("domain", "").lower()
+        t = item.get("title", "").lower()
+        if needle in t or needle in d:
+            return item["rank"]
+    return None
 
 
 # ── Vercel handler ────────────────────────────────────────────────────────────
@@ -218,9 +198,9 @@ class handler(BaseHTTPRequestHandler):
         try:
             length = int(self.headers.get("Content-Length", 0))
             body   = json.loads(self.rfile.read(length))
-            domain    = body.get("domain", "").strip()
-            prompt    = body.get("prompt", "").strip()
-            backlinks = body.get("backlinks", "").strip()
+            domain = body.get("domain", "").strip()
+            prompt = body.get("prompt", "").strip()
+            brand  = body.get("brand", "").strip()
 
             if not domain:
                 self._json(400, {"error": "Domain is required"})
@@ -259,7 +239,7 @@ class handler(BaseHTTPRequestHandler):
 
             rankings   = rank_result.get("rankings", [])
             dom_rank   = _find_rank(rankings, domain) if prompt else None
-            bl_check   = _check_backlinks(rankings, backlinks) if (prompt and backlinks) else None
+            brand_rank = _find_rank_by_brand(rankings, brand) if (prompt and brand) else None
 
             self._json(200, {
                 "ok":               True,
@@ -273,8 +253,9 @@ class handler(BaseHTTPRequestHandler):
                     "query_intent": rank_result.get("query_intent", ""),
                     "rankings":     rankings,
                     "domain_rank":  dom_rank,
+                    "brand":        brand,
+                    "brand_rank":   brand_rank,
                 } if prompt else None,
-                "backlink_check": bl_check,
             })
 
         except Exception as e:
