@@ -287,6 +287,7 @@ input.err{border-color:#ef4444}
       <div class="fpill"><span class="fpill-dot" style="background:#3b9eff"></span> Ranking Check</div>
       <div class="fpill"><span class="fpill-dot" style="background:#06b6d4"></span> Expected Prompts</div>
       <div class="fpill"><span class="fpill-dot" style="background:#f59e0b"></span> Optimization Tips</div>
+      <div class="fpill"><span class="fpill-dot" style="background:#4ade80"></span> Backlink Overlap</div>
     </div>
   </div>
 
@@ -301,6 +302,11 @@ input.err{border-color:#ef4444}
       <label class="flabel" for="f-prompt">Search Query <span class="opt-tag">(Optional)</span></label>
       <textarea id="f-prompt" placeholder="e.g. Best digital marketing agency in Noida&#10;Affordable SEO services for mortgage websites"></textarea>
       <div class="hint">If provided, Claude will rank the top 10 results and show your exact position.</div>
+    </div>
+    <div class="fgroup">
+      <label class="flabel" for="f-backlinks">Your Backlink Domains <span class="opt-tag">(Optional)</span></label>
+      <textarea id="f-backlinks" placeholder="e.g. techcrunch.com&#10;forbes.com&#10;reddit.com"></textarea>
+      <div class="hint">One domain per line. We'll check how many of these also show up in Claude's ranking answer above — requires a search query.</div>
     </div>
     <button class="btn-run" id="btn-check">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -328,6 +334,7 @@ input.err{border-color:#ef4444}
       <div class="l-step-item active"><span class="step-dot active"></span> Checking what Claude knows about your domain</div>
       <div class="l-step-item active"><span class="step-dot active"></span> Generating expected prompts &amp; suggestions</div>
       <div class="l-step-item" id="l-rank-step"><span class="step-dot"></span> Running prompt ranking check</div>
+      <div class="l-step-item" id="l-bl-step"><span class="step-dot"></span> Cross-checking backlinks against results</div>
     </div>
   </div>
 </div>
@@ -378,7 +385,7 @@ function prioChip(p){ return {high:'ph',medium:'pm',low:'pl'}[p]||'pl'; }
 function likelihoodClass(l){ return {high:'lh-high',medium:'lh-medium',low:'lh-low'}[l]||'lh-low'; }
 
 /* ── Build score chips ── */
-function buildScoreBar(dk, promptRanking) {
+function buildScoreBar(dk, promptRanking, backlinkCheck) {
   const conf = dk.confidence_level || 'unknown';
   const pct  = confidencePct(conf);
   const col  = confidenceColor(conf);
@@ -393,6 +400,16 @@ function buildScoreBar(dk, promptRanking) {
       <div class="score-chip">
         <div class="score-chip-num" style="color:${r ? '#4ade80':'#f87171'}">${r ? '#'+r : '—'}</div>
         <div class="score-chip-lbl"><strong>Query Rank</strong>out of top 10</div>
+      </div>`;
+  }
+
+  let blChip = '';
+  if (backlinkCheck) {
+    const m = backlinkCheck.matched_count, t = backlinkCheck.total_checked;
+    blChip = `
+      <div class="score-chip">
+        <div class="score-chip-num" style="color:${m ? '#4ade80':'#f87171'}">${m}/${t}</div>
+        <div class="score-chip-lbl"><strong>Backlink Overlap</strong>found in Claude's answer</div>
       </div>`;
   }
 
@@ -413,7 +430,7 @@ function buildScoreBar(dk, promptRanking) {
       <div class="score-chip-num" style="color:#3b9eff">${facts}</div>
       <div class="score-chip-lbl"><strong>Key Facts</strong>in AI training data</div>
     </div>
-    ${rankChip}`;
+    ${rankChip}${blChip}`;
 }
 
 /* ── Section 1: AI Profile ── */
@@ -534,6 +551,39 @@ function buildRanking(pr, domain) {
     </div>`;
 }
 
+/* ── Section 2b: Backlink Overlap ── */
+function buildBacklinks(bc) {
+  if (!bc) return '';
+  const rows = bc.matches.map(m => `
+    <div class="rank-row">
+      <div class="rnum t3">#${m.rank}</div>
+      <div class="rinfo">
+        <div class="rinfo-top"><span class="rtitle">${esc(m.domain)}</span><span class="your-chip" style="background:rgba(74,222,128,.12);color:#4ade80;border-color:rgba(74,222,128,.22)">✓ In Claude's Answer</span></div>
+        <div class="rdesc">Matched rank #${m.rank} — ${esc(m.title||'—')}</div>
+      </div>
+    </div>`).join('') + bc.unmatched.map(d => `
+    <div class="rank-row">
+      <div class="rnum">✕</div>
+      <div class="rinfo">
+        <div class="rinfo-top"><span class="rtitle" style="color:var(--muted)">${esc(d)}</span></div>
+        <div class="rdesc">Not present in Claude's top 10 for this query.</div>
+      </div>
+    </div>`).join('');
+
+  return `
+    <div class="sec-card">
+      <div class="sec-header blue">
+        <span class="sec-icon">🔗</span>
+        <span class="sec-title">Backlink Overlap in Claude's Results</span>
+        <span class="sec-badge" style="background:${bc.matched_count?'rgba(74,222,128,.1);color:#4ade80;border:1px solid rgba(74,222,128,.2)':'rgba(239,68,68,.08);color:#f87171;border:1px solid rgba(239,68,68,.15)'}">${bc.matched_count}/${bc.total_checked} matched</span>
+      </div>
+      <div class="sec-body">
+        <div class="intent-row"><span class="intent-lbl">What this means</span><span>Of the ${bc.total_checked} backlink domain(s) you provided, ${bc.matched_count} also appear in Claude's own top-10 answer for this query — a proxy for how much your backlink profile overlaps with sources Claude already trusts here.</span></div>
+        <div class="rank-list">${rows || '<div class="no-data">No backlink domains checked.</div>'}</div>
+      </div>
+    </div>`;
+}
+
 /* ── Section 3: Expected Prompts ── */
 function buildExpectedPrompts(prompts) {
   if (!prompts || !prompts.length) return '';
@@ -600,13 +650,14 @@ function renderResults(data) {
   $('r-tagline').textContent = dk.tagline || dk.industry || 'AI Visibility Report';
 
   // Score chips
-  $('score-bar').innerHTML = buildScoreBar(dk, data.prompt_ranking);
+  $('score-bar').innerHTML = buildScoreBar(dk, data.prompt_ranking, data.backlink_check);
 
   // Sections
   const wrap = $('sections-wrap');
   wrap.innerHTML =
     buildProfile(dk) +
     buildRanking(data.prompt_ranking, data.domain) +
+    buildBacklinks(data.backlink_check) +
     buildExpectedPrompts(data.expected_prompts) +
     buildSuggestions(data.ai_suggestions);
 }
@@ -635,8 +686,9 @@ function renderError(data) {
 
 /* ── Main flow ── */
 async function runCheck() {
-  const domain = $('f-domain').value.trim();
-  const prompt = $('f-prompt').value.trim();
+  const domain    = $('f-domain').value.trim();
+  const prompt    = $('f-prompt').value.trim();
+  const backlinks = $('f-backlinks').value.trim();
 
   if (!domain) {
     $('f-domain').classList.add('err');
@@ -653,6 +705,11 @@ async function runCheck() {
     rankStep.classList.add('active');
     rankStep.querySelector('.step-dot').classList.add('active');
   }
+  const blStep = $('l-bl-step');
+  if (prompt && backlinks) {
+    blStep.classList.add('active');
+    blStep.querySelector('.step-dot').classList.add('active');
+  }
 
   showPage('page-loading');
 
@@ -660,7 +717,7 @@ async function runCheck() {
     const res  = await fetch('/api/ai_rank', {
       method:  'POST',
       headers: {'Content-Type':'application/json'},
-      body:    JSON.stringify({ domain, prompt }),
+      body:    JSON.stringify({ domain, prompt, backlinks }),
     });
     const data = await res.json();
 
@@ -684,6 +741,8 @@ $('btn-check').addEventListener('click', runCheck);
 $('btn-new').addEventListener('click', () => {
   $('l-rank-step').classList.remove('active');
   $('l-rank-step').querySelector('.step-dot').classList.remove('active');
+  $('l-bl-step').classList.remove('active');
+  $('l-bl-step').querySelector('.step-dot').classList.remove('active');
   showPage('page-form');
 });
 $('f-domain').addEventListener('input', () => { $('f-domain').classList.remove('err'); $('e-domain').style.display='none'; });

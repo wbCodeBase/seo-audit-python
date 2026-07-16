@@ -169,6 +169,40 @@ def _find_rank(rankings, domain):
     return None
 
 
+def _normalize_domain(raw):
+    d = re.sub(r'^https?://', '', (raw or '').strip(), flags=re.I)
+    d = re.sub(r'^www\.', '', d, flags=re.I)
+    return d.split('/')[0].lower().strip()
+
+
+def _check_backlinks(rankings, backlinks_raw):
+    """Cross-reference user-supplied backlink domains against the domains
+    Claude actually surfaced in its ranking answer for the query."""
+    domains, seen = [], set()
+    for raw in re.split(r'[\n,]+', backlinks_raw):
+        d = _normalize_domain(raw)
+        if d and d not in seen:
+            seen.add(d)
+            domains.append(d)
+
+    ranked = [(_normalize_domain(item.get("domain", "")), item) for item in rankings]
+
+    matches, unmatched = [], []
+    for d in domains:
+        hit = next((item for rd, item in ranked if rd and (d == rd or d in rd or rd in d)), None)
+        if hit:
+            matches.append({"domain": d, "rank": hit["rank"], "title": hit.get("title", "")})
+        else:
+            unmatched.append(d)
+
+    return {
+        "total_checked": len(domains),
+        "matched_count":  len(matches),
+        "matches":        matches,
+        "unmatched":      unmatched,
+    }
+
+
 # ── Vercel handler ────────────────────────────────────────────────────────────
 
 class handler(BaseHTTPRequestHandler):
@@ -184,8 +218,9 @@ class handler(BaseHTTPRequestHandler):
         try:
             length = int(self.headers.get("Content-Length", 0))
             body   = json.loads(self.rfile.read(length))
-            domain = body.get("domain", "").strip()
-            prompt = body.get("prompt", "").strip()
+            domain    = body.get("domain", "").strip()
+            prompt    = body.get("prompt", "").strip()
+            backlinks = body.get("backlinks", "").strip()
 
             if not domain:
                 self._json(400, {"error": "Domain is required"})
@@ -224,6 +259,7 @@ class handler(BaseHTTPRequestHandler):
 
             rankings   = rank_result.get("rankings", [])
             dom_rank   = _find_rank(rankings, domain) if prompt else None
+            bl_check   = _check_backlinks(rankings, backlinks) if (prompt and backlinks) else None
 
             self._json(200, {
                 "ok":               True,
@@ -238,6 +274,7 @@ class handler(BaseHTTPRequestHandler):
                     "rankings":     rankings,
                     "domain_rank":  dom_rank,
                 } if prompt else None,
+                "backlink_check": bl_check,
             })
 
         except Exception as e:
