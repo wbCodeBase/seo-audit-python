@@ -108,6 +108,10 @@ input.err{border-color:#ef4444}
 .l-step-item.active{color:var(--sub)}
 .step-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.15);flex-shrink:0}
 .step-dot.active{background:#8B5CF6;box-shadow:0 0 6px rgba(139,92,246,.7)}
+.l-progress-wrap{margin-top:20px}
+.l-progress-track{height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden}
+.l-progress-fill{height:100%;width:0%;background:linear-gradient(90deg,#8B5CF6,#3b9eff);border-radius:4px;transition:width .3s ease}
+.l-progress-lbl{font-size:11px;color:var(--muted);margin-top:8px}
 
 /* ══ RESULTS PAGE ══ */
 #page-results{min-height:100vh;background:#0a0f1e;padding:36px 16px 64px}
@@ -219,6 +223,31 @@ input.err{border-color:#ef4444}
 .rdomain{font-size:11.5px;color:#4ade80;display:flex;align-items:center;gap:4px;margin-bottom:4px}
 .rdesc{font-size:12px;color:var(--muted);line-height:1.6}
 
+/* ── Multi-prompt ranking table ── */
+.rank-summary{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.rsum-chip{flex:1;min-width:120px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 14px}
+.rsum-num{font-size:19px;font-weight:800;line-height:1.1}
+.rsum-lbl{font-size:10.5px;color:var(--muted);margin-top:2px}
+.rtable-wrap{overflow-x:auto;border:1px solid rgba(255,255,255,.07);border-radius:10px}
+.rtable{width:100%;border-collapse:collapse;font-size:12.5px;min-width:640px}
+.rtable th{text-align:left;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:rgba(255,255,255,.03);padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.08);white-space:nowrap}
+.rtable td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:top}
+.rtable tr:last-child td{border-bottom:none}
+.rtable tr.rt-expandable{cursor:pointer}
+.rtable tr.rt-expandable:hover td{background:rgba(255,255,255,.02)}
+.rt-q{font-weight:600;color:#fff;max-width:280px}
+.rt-rank{font-weight:700;white-space:nowrap}
+.rt-rank.found{color:#4ade80}
+.rt-rank.notfound{color:#f87171}
+.rt-top{color:var(--sub);white-space:nowrap}
+.rt-err{color:#f87171;font-size:11.5px}
+.rt-toggle{color:#60a5fa;font-size:11px;font-weight:600;white-space:nowrap}
+.rt-detail-row td{background:rgba(255,255,255,.02);padding:12px 16px}
+.rt-detail-list{display:flex;flex-direction:column;gap:4px}
+.rt-detail-item{font-size:11.5px;color:var(--sub);display:flex;gap:8px}
+.rt-detail-item .n{color:var(--muted);width:18px;flex-shrink:0}
+.rt-detail-item.yours{color:#60a5fa;font-weight:600}
+
 /* ── Expected prompts section ── */
 .prompt-list{display:flex;flex-direction:column;gap:10px}
 .prompt-row{
@@ -302,11 +331,11 @@ input.err{border-color:#ef4444}
       <input type="text" id="f-brand" placeholder="e.g. White Bunnie"/>
       <div class="hint">So we can check where your exact brand name ranks, not just a guess based on the domain.</div>
     </div>
-    <div class="divider">Optional — check ranking for a specific query</div>
+    <div class="divider">Optional — check ranking for one or many queries</div>
     <div class="fgroup">
-      <label class="flabel" for="f-prompt">Search Query <span class="opt-tag">(Optional)</span></label>
-      <textarea id="f-prompt" placeholder="e.g. Best digital marketing agency in Noida&#10;Affordable SEO services for mortgage websites"></textarea>
-      <div class="hint">If provided, Claude will rank the top 10 results and show your domain's and brand's exact position.</div>
+      <label class="flabel" for="f-prompt">Search Queries <span class="opt-tag">(Optional — one per line, up to 50)</span></label>
+      <textarea id="f-prompt" rows="5" placeholder="e.g. Best digital marketing agency in Noida&#10;Affordable SEO services for mortgage websites&#10;Top SEO companies in India&#10;...up to 50 queries, one per line"></textarea>
+      <div class="hint" id="prompt-hint">If provided, Claude will rank the top 10 results for each query and show your domain's and brand's exact position in a report table. One query per line (commas also work).</div>
     </div>
     <button class="btn-run" id="btn-check">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -333,7 +362,11 @@ input.err{border-color:#ef4444}
     <div class="l-steps">
       <div class="l-step-item active"><span class="step-dot active"></span> Checking what Claude knows about your domain</div>
       <div class="l-step-item active"><span class="step-dot active"></span> Generating expected prompts &amp; suggestions</div>
-      <div class="l-step-item" id="l-rank-step"><span class="step-dot"></span> Running prompt ranking check</div>
+      <div class="l-step-item" id="l-rank-step"><span class="step-dot"></span> Running prompt ranking checks</div>
+    </div>
+    <div class="l-progress-wrap hidden" id="l-progress-wrap">
+      <div class="l-progress-track"><div class="l-progress-fill" id="l-progress-fill"></div></div>
+      <div class="l-progress-lbl" id="l-progress-lbl">0 / 0 queries checked</div>
     </div>
   </div>
 </div>
@@ -384,7 +417,7 @@ function prioChip(p){ return {high:'ph',medium:'pm',low:'pl'}[p]||'pl'; }
 function likelihoodClass(l){ return {high:'lh-high',medium:'lh-medium',low:'lh-low'}[l]||'lh-low'; }
 
 /* ── Build score chips ── */
-function buildScoreBar(dk, promptRanking) {
+function buildScoreBar(dk, summary) {
   const conf = dk.confidence_level || 'unknown';
   const pct  = confidencePct(conf);
   const col  = confidenceColor(conf);
@@ -393,22 +426,22 @@ function buildScoreBar(dk, promptRanking) {
   const facts    = (dk.key_facts||[]).length;
 
   let rankChip = '';
-  if (promptRanking) {
-    const r = promptRanking.domain_rank;
+  if (summary && summary.total_prompts) {
+    const found = summary.domain_found_count || 0;
     rankChip = `
       <div class="score-chip">
-        <div class="score-chip-num" style="color:${r ? '#4ade80':'#f87171'}">${r ? '#'+r : '—'}</div>
-        <div class="score-chip-lbl"><strong>Domain Rank</strong>out of top 10</div>
+        <div class="score-chip-num" style="color:${found ? '#4ade80':'#f87171'}">${found}/${summary.total_prompts}</div>
+        <div class="score-chip-lbl"><strong>Domain Found</strong>${summary.avg_domain_rank ? 'avg rank #'+summary.avg_domain_rank : 'across queries'}</div>
       </div>`;
   }
 
   let brandChip = '';
-  if (promptRanking && promptRanking.brand) {
-    const r = promptRanking.brand_rank;
+  if (summary && summary.brand_found_count !== null && summary.brand_found_count !== undefined) {
+    const found = summary.brand_found_count || 0;
     brandChip = `
       <div class="score-chip">
-        <div class="score-chip-num" style="color:${r ? '#4ade80':'#f87171'}">${r ? '#'+r : '—'}</div>
-        <div class="score-chip-lbl"><strong>Brand Rank</strong>out of top 10</div>
+        <div class="score-chip-num" style="color:${found ? '#4ade80':'#f87171'}">${found}/${summary.total_prompts}</div>
+        <div class="score-chip-lbl"><strong>Brand Found</strong>${summary.avg_brand_rank ? 'avg rank #'+summary.avg_brand_rank : 'across queries'}</div>
       </div>`;
   }
 
@@ -485,93 +518,97 @@ function buildProfile(dk) {
     </div>`;
 }
 
-/* ── Section 2: Prompt Ranking ── */
-function buildRanking(pr, domain) {
-  if (!pr) return '';
-  const rankings = pr.rankings || [];
-  const rank     = pr.domain_rank;
-  const dispDom  = domain.replace(/^https?:\/\//i,'').replace(/^www\./i,'').replace(/\/+$/,'');
+/* ── Section 2: Multi-Prompt Ranking Report ── */
+let _rankReports = [];
 
-  const banner = rank
-    ? `<div class="pos-banner found">
-        <div class="pos-num" style="color:#4ade80">#${rank}</div>
-        <div class="pos-info">
-          <div class="pos-title">Your domain is ranked on Claude</div>
-          <div class="pos-sub">Claude places <strong style="color:#fff">${esc(dispDom)}</strong> at position #${rank} of 10 for this query.</div>
-          <span class="pos-chip f">✓ Found at rank #${rank}</span>
-        </div>
-       </div>`
-    : `<div class="pos-banner notfound">
-        <div class="pos-num" style="color:#f87171">—</div>
-        <div class="pos-info">
-          <div class="pos-title">Not found in Claude's top 10</div>
-          <div class="pos-sub"><strong style="color:#fff">${esc(dispDom)}</strong> did not appear in Claude's recommendations for this query.</div>
-          <span class="pos-chip nf">✕ Not in top 10</span>
-        </div>
-       </div>`;
+function buildRanking(reports, summary, domain, brand) {
+  if (!reports || !reports.length) return '';
+  _rankReports = reports;
+  const dispDom = domain.replace(/^https?:\/\//i,'').replace(/^www\./i,'').replace(/\/+$/,'');
 
-  let brandBanner = '';
-  if (pr.brand) {
-    const br = pr.brand_rank;
-    brandBanner = br
-      ? `<div class="pos-banner found" style="margin-top:10px">
-          <div class="pos-num" style="color:#4ade80">#${br}</div>
-          <div class="pos-info">
-            <div class="pos-title">Your brand name is ranked on Claude</div>
-            <div class="pos-sub">Claude places <strong style="color:#fff">${esc(pr.brand)}</strong> at position #${br} of 10 for this query.</div>
-            <span class="pos-chip f">✓ Brand found at rank #${br}</span>
-          </div>
-         </div>`
-      : `<div class="pos-banner notfound" style="margin-top:10px">
-          <div class="pos-num" style="color:#f87171">—</div>
-          <div class="pos-info">
-            <div class="pos-title">Brand name not found in Claude's top 10</div>
-            <div class="pos-sub"><strong style="color:#fff">${esc(pr.brand)}</strong> did not appear by name in Claude's recommendations for this query.</div>
-            <span class="pos-chip nf">✕ Brand not in top 10</span>
-          </div>
-         </div>`;
-  }
+  const summaryChips = `
+    <div class="rank-summary">
+      <div class="rsum-chip">
+        <div class="rsum-num">${summary.total_prompts}</div>
+        <div class="rsum-lbl">Queries checked</div>
+      </div>
+      <div class="rsum-chip">
+        <div class="rsum-num" style="color:${summary.domain_found_count ? '#4ade80':'#f87171'}">${summary.domain_found_count}/${summary.total_prompts}</div>
+        <div class="rsum-lbl">Domain in top 10${summary.avg_domain_rank ? ' · avg #'+summary.avg_domain_rank : ''}</div>
+      </div>
+      ${brand ? `
+      <div class="rsum-chip">
+        <div class="rsum-num" style="color:${summary.brand_found_count ? '#4ade80':'#f87171'}">${summary.brand_found_count||0}/${summary.total_prompts}</div>
+        <div class="rsum-lbl">Brand in top 10${summary.avg_brand_rank ? ' · avg #'+summary.avg_brand_rank : ''}</div>
+      </div>` : ''}
+    </div>`;
 
-  const intentRow = pr.query_intent
-    ? `<div class="intent-row"><span class="intent-lbl">Intent</span><span>${esc(pr.query_intent)}</span></div>` : '';
-
-  const rows = rankings.map(item => {
-    const isYours  = rank && item.rank === rank;
-    const numCls   = isYours ? 'you' : item.rank <= 3 ? 't3' : '';
-    const rowCls   = isYours ? 'rank-row yours' : 'rank-row';
+  const rows = reports.map((r, i) => {
+    if (r.error) {
+      return `
+        <tr>
+          <td class="rt-q">"${esc(r.prompt)}"</td>
+          <td colspan="4" class="rt-err">⚠ ${esc(r.error)}</td>
+        </tr>`;
+    }
+    const top1 = (r.rankings||[])[0];
+    const domCell = r.domain_rank
+      ? `<span class="rt-rank found">#${r.domain_rank}</span>` : `<span class="rt-rank notfound">—</span>`;
+    const brandCell = brand
+      ? (r.brand_rank ? `<span class="rt-rank found">#${r.brand_rank}</span>` : `<span class="rt-rank notfound">—</span>`)
+      : '';
     return `
-      <div class="${rowCls}">
-        <div class="rnum ${numCls}">${item.rank}</div>
-        <div class="rinfo">
-          <div class="rinfo-top">
-            <span class="rtitle">${esc(item.title||'—')}</span>
-            ${isYours ? '<span class="your-chip">★ Your Site</span>' : ''}
+      <tr class="rt-expandable" data-i="${i}">
+        <td class="rt-q">"${esc(r.prompt)}"</td>
+        <td>${domCell}</td>
+        ${brand ? `<td>${brandCell}</td>` : ''}
+        <td class="rt-top">${top1 ? esc(top1.title||top1.domain||'—') : '—'}</td>
+        <td class="rt-toggle">View top 10 ▾</td>
+      </tr>
+      <tr class="rt-detail-row hidden" id="rt-detail-${i}">
+        <td colspan="${brand?5:4}">
+          <div class="rt-detail-list">
+            ${(r.rankings||[]).map(item => `
+              <div class="rt-detail-item${r.domain_rank===item.rank?' yours':''}">
+                <span class="n">${item.rank}.</span>
+                <span>${esc(item.title||'—')} — <span style="color:#4ade80">${esc(item.domain||'—')}</span>${r.domain_rank===item.rank?' <strong>★ your domain</strong>':''}</span>
+              </div>`).join('') || '<div class="rt-detail-item">No ranking data.</div>'}
           </div>
-          <div class="rdomain">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            ${esc(item.domain||'—')}
-          </div>
-          <div class="rdesc">${esc(item.description||'')}</div>
-        </div>
-      </div>`;
+        </td>
+      </tr>`;
   }).join('');
 
   return `
     <div class="sec-card">
       <div class="sec-header blue">
         <span class="sec-icon">📊</span>
-        <span class="sec-title">Claude Ranking — "${esc(pr.prompt)}"</span>
-        ${rank ? `<span class="sec-badge" style="background:rgba(74,222,128,.1);color:#4ade80;border:1px solid rgba(74,222,128,.2)">Rank #${rank}</span>`
-               : `<span class="sec-badge" style="background:rgba(239,68,68,.08);color:#f87171;border:1px solid rgba(239,68,68,.15)">Not Found</span>`}
+        <span class="sec-title">Multi-Prompt Ranking Report</span>
+        <span class="sec-badge" style="background:rgba(59,158,255,.1);color:#60a5fa;border:1px solid rgba(59,158,255,.2)">${reports.length} queries</span>
       </div>
       <div class="sec-body">
-        ${banner}
-        ${brandBanner}
-        ${intentRow}
-        <div class="rank-list">${rows || '<div class="no-data">No ranking data available.</div>'}</div>
+        ${summaryChips}
+        <div class="rtable-wrap">
+          <table class="rtable">
+            <thead><tr>
+              <th>Query</th><th>Domain Rank</th>${brand?'<th>Brand Rank</th>':''}<th>#1 Result</th><th></th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
       </div>
     </div>`;
 }
+
+document.addEventListener('click', e => {
+  const row = e.target.closest('tr.rt-expandable');
+  if (!row) return;
+  const i = row.dataset.i;
+  const detail = document.getElementById(`rt-detail-${i}`);
+  if (!detail) return;
+  const open = !detail.classList.contains('hidden');
+  detail.classList.toggle('hidden', open);
+  row.querySelector('.rt-toggle').textContent = open ? 'View top 10 ▾' : 'Hide ▴';
+});
 
 /* ── Section 3: Expected Prompts ── */
 function buildExpectedPrompts(prompts) {
@@ -632,6 +669,7 @@ function buildSuggestions(suggestions) {
 function renderResults(data) {
   const dk      = data.domain_knowledge || {};
   const dispDom = data.domain.replace(/^https?:\/\//i,'').replace(/^www\./i,'').replace(/\/+$/,'');
+  const summary = data.summary || {};
 
   // Top bar
   $('r-icon').textContent = dispDom.charAt(0).toUpperCase();
@@ -639,13 +677,24 @@ function renderResults(data) {
   $('r-tagline').textContent = dk.tagline || dk.industry || 'AI Visibility Report';
 
   // Score chips
-  $('score-bar').innerHTML = buildScoreBar(dk, data.prompt_ranking);
+  $('score-bar').innerHTML = buildScoreBar(dk, summary);
+
+  // Domain-analysis warning (ranking table can still succeed even if this failed)
+  const domErr = data.domain_error ? `
+    <div class="sec-card">
+      <div class="sec-header amber">
+        <span class="sec-icon">⚠️</span>
+        <span class="sec-title">Domain Knowledge Profile Unavailable</span>
+      </div>
+      <div class="sec-body" style="font-size:12.5px;color:var(--muted)">${esc(data.domain_error)}</div>
+    </div>` : '';
 
   // Sections
   const wrap = $('sections-wrap');
   wrap.innerHTML =
-    buildProfile(dk) +
-    buildRanking(data.prompt_ranking, data.domain) +
+    domErr +
+    (Object.keys(dk).length ? buildProfile(dk) : '') +
+    buildRanking(data.prompt_reports, summary, data.domain, data.brand) +
     buildExpectedPrompts(data.expected_prompts) +
     buildSuggestions(data.ai_suggestions);
 }
@@ -672,11 +721,43 @@ function renderError(data) {
     </div>`;
 }
 
-/* ── Main flow ── */
+/* ── Prompt count hint ── */
+function splitPrompts(text) {
+  const seen = new Map();
+  text.split(/\n/).forEach(line => {
+    (line.includes(',') ? line.split(',') : [line]).forEach(p => {
+      const t = p.trim();
+      if (t && !seen.has(t.toLowerCase())) seen.set(t.toLowerCase(), t);
+    });
+  });
+  return [...seen.values()];
+}
+function updatePromptHint() {
+  const list = splitPrompts($('f-prompt').value);
+  const over = list.length > 50;
+  $('prompt-hint').textContent = list.length
+    ? `${Math.min(list.length,50)}${over?' (only the first 50 will be used)':''} quer${list.length===1?'y':'ies'} detected. Claude will rank the top 10 results for each.`
+    : 'If provided, Claude will rank the top 10 results for each query and show your domain\'s and brand\'s exact position in a report table. One query per line (commas also work).';
+  $('prompt-hint').style.color = over ? '#fbbf24' : '';
+}
+$('f-prompt').addEventListener('input', updatePromptHint);
+
+/* ── Main flow (start → run → poll) ── */
+let _pollTimer = null;
+
+function setProgress(completed, total) {
+  const wrap = $('l-progress-wrap');
+  if (!total) { wrap.classList.add('hidden'); return; }
+  wrap.classList.remove('hidden');
+  const pct = Math.round((completed / total) * 100);
+  $('l-progress-fill').style.width = pct + '%';
+  $('l-progress-lbl').textContent = `${completed} / ${total} queries checked`;
+}
+
 async function runCheck() {
-  const domain = $('f-domain').value.trim();
-  const brand  = $('f-brand').value.trim();
-  const prompt = $('f-prompt').value.trim();
+  const domain  = $('f-domain').value.trim();
+  const brand   = $('f-brand').value.trim();
+  const prompts = splitPrompts($('f-prompt').value).slice(0, 50);
 
   if (!domain) {
     $('f-domain').classList.add('err');
@@ -689,30 +770,65 @@ async function runCheck() {
 
   // Update loading UI
   const rankStep = $('l-rank-step');
-  if (prompt) {
+  if (prompts.length) {
     rankStep.classList.add('active');
     rankStep.querySelector('.step-dot').classList.add('active');
   }
+  setProgress(0, 0);
 
   showPage('page-loading');
 
   try {
-    const res  = await fetch('/api/ai_rank', {
+    const startRes  = await fetch('/api/ai_rank_start', {
       method:  'POST',
       headers: {'Content-Type':'application/json'},
-      body:    JSON.stringify({ domain, prompt, brand }),
+      body:    JSON.stringify({ domain, brand, prompts }),
     });
-    const data = await res.json();
+    const startData = await startRes.json();
 
-    if (!data.ok) throw new Error(data.error || 'Server error');
-
-    showPage('page-results');
-
-    if (data.status === 'success') {
-      renderResults(data);
-    } else {
-      renderError(data);
+    if (startData.error || !startData.job_id) {
+      showPage('page-results');
+      renderError({
+        status: /ANTHROPIC_API_KEY/i.test(startData.error||'') ? 'no_key' : 'error',
+        error_detail: startData.error || 'Failed to start analysis.',
+      });
+      return;
     }
+    const jobId = startData.job_id;
+
+    // Fire the long-running worker — don't await it, poll Redis instead
+    fetch('/api/ai_rank_run', {
+      method:  'POST',
+      headers: {'Content-Type':'application/json'},
+      body:    JSON.stringify({ job_id: jobId, domain, brand, prompts }),
+    }).catch(() => {});
+
+    let attempts = 0;
+    _pollTimer = setInterval(async () => {
+      attempts++;
+      if (attempts > 150) { // ~7.5 min ceiling
+        clearInterval(_pollTimer);
+        showPage('page-form');
+        alert('Analysis timed out. Please try again with fewer queries.');
+        return;
+      }
+      try {
+        const pr  = await fetch(`/api/ai_rank_poll?job_id=${jobId}`);
+        const res = await pr.json();
+
+        if (res.status === 'running') {
+          setProgress(res.completed || 0, res.total || 0);
+        } else if (res.status === 'done') {
+          clearInterval(_pollTimer);
+          showPage('page-results');
+          renderResults(res.data);
+        } else if (res.status === 'error') {
+          clearInterval(_pollTimer);
+          showPage('page-results');
+          renderError({ status: 'error', error_detail: res.message || 'Analysis failed.' });
+        }
+      } catch (e) { /* transient network error, keep polling */ }
+    }, 3000);
 
   } catch (err) {
     showPage('page-form');
@@ -722,6 +838,7 @@ async function runCheck() {
 
 $('btn-check').addEventListener('click', runCheck);
 $('btn-new').addEventListener('click', () => {
+  if (_pollTimer) clearInterval(_pollTimer);
   $('l-rank-step').classList.remove('active');
   $('l-rank-step').querySelector('.step-dot').classList.remove('active');
   showPage('page-form');

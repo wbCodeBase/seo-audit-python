@@ -1,16 +1,46 @@
 """
-/api/ai_rank — AI Visibility & Ranking Checker
-Runs parallel Claude analyses to produce a full AI presence report for a domain:
-  1. Domain knowledge profile (what Claude knows / doesn't know)
-  2. Prompt ranking — top 10 results + domain position (if prompt given)
-  3. Expected prompts — queries likely to surface this domain
-  4. AI optimization suggestions — how to improve AI discoverability
+/api/ai_rank_run  POST {job_id, domain, brand, prompts}
+Long-running worker for the AI Visibility & Ranking Checker.
+Runs:
+  1. Domain knowledge profile (once) — what Claude knows about the domain,
+     expected prompts, AI optimization suggestions.
+  2. Prompt ranking — one Claude "top 10" call per prompt (up to 50 prompts),
+     run with bounded concurrency so we don't blow through Anthropic rate
+     limits or the function's time budget.
+
+Progress (completed / total) and results are written to Redis after every
+prompt finishes, so /api/ai_rank_poll can show a live progress bar and — if
+the function ever gets killed mid-run — the client still sees whatever
+prompts completed rather than nothing at all.
 """
 
 import json, os, re, threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from http.server import BaseHTTPRequestHandler
 
 CLAUDE_MODELS = ["claude-sonnet-4-5", "claude-3-5-sonnet-20241022"]
+MAX_WORKERS   = 6
+PER_CALL_TIMEOUT = 55
+
+
+# ── Redis ─────────────────────────────────────────────────────────────────────
+
+def get_redis():
+    url   = os.environ.get("UPSTASH_REDIS_REST_URL")
+    token = os.environ.get("UPSTASH_REDIS_REST_TOKEN")
+    if not url or not token:
+        return None
+    try:
+        from upstash_redis import Redis
+        return Redis(url=url, token=token)
+    except Exception:
+        return None
+
+
+def store_set(job_id, value):
+    r = get_redis()
+    if r:
+        r.set(f"airank:{job_id}", json.dumps(value), ex=3600)
 
 
 # ── Low-level Claude call ─────────────────────────────────────────────────────
@@ -132,31 +162,27 @@ Return ONLY valid JSON (no markdown):
 
 # ── Workers ───────────────────────────────────────────────────────────────────
 
-def _worker_domain(domain, api_key, bucket, key):
+def _worker_domain(domain, api_key, bucket):
     clean = re.sub(r'^https?://', '', domain, flags=re.I)
     clean = re.sub(r'^www\.', '', clean, flags=re.I).rstrip('/')
     text, err = _call_claude(DOMAIN_PROMPT.format(domain=clean), api_key, max_tokens=2200)
     if err:
-        bucket[key] = {"_error": err}
+        bucket["domain"] = {"_error": err}
         return
-    data = _parse_json(text)
-    bucket[key] = data if data else {"_error": f"JSON parse failed. Raw: {(text or '')[:200]}"}
+    data = bucket["domain"] = _parse_json(text) or {"_error": f"JSON parse failed. Raw: {(text or '')[:200]}"}
 
 
-def _worker_ranking(prompt, api_key, bucket, key):
+def _rank_one(prompt, api_key):
     text, err = _call_claude(RANKING_PROMPT.format(prompt=prompt), api_key, max_tokens=1800)
     if err:
-        bucket[key] = {"_error": err}
-        return
+        return {"_error": err}
     data = _parse_json(text)
     if data and "rankings" in data:
-        bucket[key] = data
-    else:
-        bucket[key] = {"_error": f"JSON parse failed. Raw: {(text or '')[:200]}"}
+        return data
+    return {"_error": f"JSON parse failed. Raw: {(text or '')[:200]}"}
 
 
 def _find_rank(rankings, domain):
-    """Is this domain present as an entry in Claude's ranking answer? (domain-anchor check)"""
     if not domain or not rankings:
         return None
     clean = re.sub(r'^https?://', '', domain, flags=re.I)
@@ -171,7 +197,6 @@ def _find_rank(rankings, domain):
 
 
 def _find_rank_by_brand(rankings, brand):
-    """Is this exact brand name present (as title or domain) in Claude's ranking answer?"""
     if not brand or not rankings:
         return None
     needle = brand.strip().lower()
@@ -183,90 +208,114 @@ def _find_rank_by_brand(rankings, brand):
     return None
 
 
-# ── Vercel handler ────────────────────────────────────────────────────────────
+def _run_all(job_id, domain, brand, prompts):
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    total   = len(prompts)
+
+    domain_bucket = {}
+    t_domain = threading.Thread(target=_worker_domain, args=(domain, api_key, domain_bucket))
+    t_domain.daemon = True
+    t_domain.start()
+
+    prompt_reports = [None] * total
+    completed = 0
+    lock = threading.Lock()
+
+    def _persist_progress():
+        store_set(job_id, {
+            "status":         "running",
+            "domain":         domain,
+            "brand":          brand,
+            "total":          total,
+            "completed":      completed,
+            "prompt_reports": [p for p in prompt_reports if p is not None],
+        })
+
+    if total:
+        with ThreadPoolExecutor(max_workers=min(MAX_WORKERS, total)) as pool:
+            future_to_idx = {
+                pool.submit(_rank_one, p, api_key): i for i, p in enumerate(prompts)
+            }
+            for fut in as_completed(future_to_idx):
+                idx    = future_to_idx[fut]
+                prompt = prompts[idx]
+                try:
+                    result = fut.result()
+                except Exception as e:
+                    result = {"_error": f"{type(e).__name__}: {e}"}
+
+                rankings   = result.get("rankings", []) if not result.get("_error") else []
+                dom_rank   = _find_rank(rankings, domain)
+                brand_rank = _find_rank_by_brand(rankings, brand) if brand else None
+
+                with lock:
+                    prompt_reports[idx] = {
+                        "prompt":       prompt,
+                        "query_intent": result.get("query_intent", ""),
+                        "rankings":     rankings,
+                        "domain_rank":  dom_rank,
+                        "brand_rank":   brand_rank,
+                        "error":        result.get("_error"),
+                    }
+                    completed += 1
+                    _persist_progress()
+
+    t_domain.join(PER_CALL_TIMEOUT)
+    domain_result = domain_bucket.get("domain") or {"_error": "Domain analysis timed out."}
+
+    found_reports = [p for p in prompt_reports if p is not None and not p.get("error")]
+    domain_found  = [p for p in found_reports if p.get("domain_rank")]
+    brand_found   = [p for p in found_reports if brand and p.get("brand_rank")]
+
+    summary = {
+        "total_prompts":       total,
+        "completed_prompts":   len(found_reports),
+        "domain_found_count":  len(domain_found),
+        "brand_found_count":   len(brand_found) if brand else None,
+        "avg_domain_rank":     round(sum(p["domain_rank"] for p in domain_found) / len(domain_found), 1)
+                                if domain_found else None,
+        "avg_brand_rank":      round(sum(p["brand_rank"] for p in brand_found) / len(brand_found), 1)
+                                if brand_found else None,
+    }
+
+    store_set(job_id, {
+        "status": "done",
+        "data": {
+            "domain":           domain,
+            "brand":            brand,
+            "domain_knowledge": domain_result.get("domain_knowledge", {}) if not domain_result.get("_error") else {},
+            "expected_prompts": domain_result.get("expected_prompts", []) if not domain_result.get("_error") else [],
+            "ai_suggestions":   domain_result.get("ai_suggestions", []) if not domain_result.get("_error") else [],
+            "domain_error":     domain_result.get("_error"),
+            "prompt_reports":   [p for p in prompt_reports if p is not None],
+            "summary":          summary,
+        },
+    })
+
 
 class handler(BaseHTTPRequestHandler):
 
-    def do_OPTIONS(self):
-        self.send_response(200)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.end_headers()
-
     def do_POST(self):
+        job_id = ""
         try:
-            length = int(self.headers.get("Content-Length", 0))
-            body   = json.loads(self.rfile.read(length))
-            domain = body.get("domain", "").strip()
-            prompt = body.get("prompt", "").strip()
-            brand  = body.get("brand", "").strip()
+            length  = int(self.headers.get("Content-Length", 0))
+            body    = json.loads(self.rfile.read(length) or b"{}")
+            job_id  = body.get("job_id", "")
+            domain  = body.get("domain", "").strip()
+            brand   = body.get("brand", "").strip()
+            prompts = body.get("prompts", [])
 
-            if not domain:
-                self._json(400, {"error": "Domain is required"})
-                return
-
-            api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
-            if not api_key:
-                self._json(200, {
-                    "ok": True, "status": "no_key",
-                    "error_detail": "ANTHROPIC_API_KEY is not set in Vercel environment variables.",
-                })
-                return
-
-            bucket = {}
-
-            if prompt:
-                # Run domain analysis + ranking in parallel
-                t1 = threading.Thread(target=_worker_domain,  args=(domain, api_key, bucket, "domain"))
-                t2 = threading.Thread(target=_worker_ranking, args=(prompt,  api_key, bucket, "rank"))
-                t1.daemon = t2.daemon = True
-                t1.start(); t2.start()
-                t1.join(55); t2.join(55)
-            else:
-                _worker_domain(domain, api_key, bucket, "domain")
-
-            domain_result = bucket.get("domain") or {}
-            rank_result   = bucket.get("rank")   or {}
-
-            # Surface domain-analysis errors
-            if domain_result.get("_error") and not rank_result:
-                self._json(200, {
-                    "ok": True, "status": "error",
-                    "error_detail": domain_result["_error"]
-                })
-                return
-
-            rankings   = rank_result.get("rankings", [])
-            dom_rank   = _find_rank(rankings, domain) if prompt else None
-            brand_rank = _find_rank_by_brand(rankings, brand) if (prompt and brand) else None
-
-            self._json(200, {
-                "ok":               True,
-                "status":           "success",
-                "domain":           domain,
-                "domain_knowledge": domain_result.get("domain_knowledge", {}),
-                "expected_prompts": domain_result.get("expected_prompts", []),
-                "ai_suggestions":   domain_result.get("ai_suggestions", []),
-                "prompt_ranking": {
-                    "prompt":       prompt,
-                    "query_intent": rank_result.get("query_intent", ""),
-                    "rankings":     rankings,
-                    "domain_rank":  dom_rank,
-                    "brand":        brand,
-                    "brand_rank":   brand_rank,
-                } if prompt else None,
-            })
+            if job_id and domain:
+                _run_all(job_id, domain, brand, prompts)
 
         except Exception as e:
-            self._json(500, {"error": str(e)})
+            if job_id:
+                store_set(job_id, {"status": "error", "message": str(e)})
 
-    def _json(self, status, data):
-        out = json.dumps(data).encode()
-        self.send_response(status)
+        out = json.dumps({"ok": True}).encode()
+        self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(out)))
-        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         self.wfile.write(out)
 

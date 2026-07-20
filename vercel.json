@@ -8,8 +8,10 @@
     { "src": "/api/audit_start", "dest": "/api/audit_start.py" },
     { "src": "/api/audit_poll",  "dest": "/api/audit_poll.py" },
     { "src": "/api/audit_run",   "dest": "/api/audit_run.py" },
-    { "src": "/api/send_email",  "dest": "/api/send_email.py" },
-    { "src": "/api/ai_rank",     "dest": "/api/ai_rank.py" },
+    { "src": "/api/send_email",   "dest": "/api/send_email.py" },
+    { "src": "/api/ai_rank_start","dest": "/api/ai_rank_start.py" },
+    { "src": "/api/ai_rank_run",  "dest": "/api/ai_rank_run.py" },
+    { "src": "/api/ai_rank_poll", "dest": "/api/ai_rank_poll.py" },
     { "src": "/(.*)", "dest": "/public/$1" }
   ]
 }
