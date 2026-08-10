@@ -4,9 +4,10 @@ Long-running worker for the AI Visibility & Ranking Checker.
 Runs:
   1. Domain knowledge profile (once) — what Claude knows about the domain,
      expected prompts, AI optimization suggestions.
-  2. Prompt ranking — one Claude "top 10" call per prompt (up to 50 prompts),
-     run with bounded concurrency so we don't blow through Anthropic rate
-     limits or the function's time budget.
+  2. Prompt ranking — one live web-search-grounded call per prompt (up to
+     50 prompts), reporting the sources Claude actually cited (not a
+     recalled guess), run with bounded concurrency so we don't blow through
+     Anthropic rate limits or the function's time budget.
 
 Progress (completed / total) and results are written to Redis after every
 prompt finishes, so /api/ai_rank_poll can show a live progress bar and — if
@@ -17,10 +18,12 @@ prompts completed rather than nothing at all.
 import json, os, re, threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from http.server import BaseHTTPRequestHandler
+from urllib.parse import urlparse
 
-CLAUDE_MODELS = ["claude-sonnet-4-5", "claude-3-5-sonnet-20241022"]
+CLAUDE_MODELS = ["claude-sonnet-5", "claude-opus-4-8"]
 MAX_WORKERS   = 6
 PER_CALL_TIMEOUT = 55
+WEB_SEARCH_MAX_USES = 5  # cap searches per query; billed at $10/1,000 searches on top of tokens
 
 
 # ── Redis ─────────────────────────────────────────────────────────────────────
@@ -137,27 +140,9 @@ Rules:
 
 
 RANKING_PROMPT = """\
-You are a search ranking engine. For the query below, list the top 10 most relevant websites or businesses.
+{prompt}
 
-Query: {prompt}
-
-Return ONLY valid JSON (no markdown):
-
-{{
-  "query_intent": "One sentence: what the searcher wants",
-  "rankings": [
-    {{
-      "rank": 1,
-      "title": "Brand or Website Name",
-      "domain": "example.com",
-      "description": "1-2 sentences: what this offers and why it ranks here"
-    }}
-  ]
-}}
-
-- domain: root domain only (no http / www / trailing slash)
-- For local queries, list real local businesses if you know them
-- Provide exactly 10 results"""
+Use web search to find current, real information before answering, and cite the sources you use. Answer the way you normally would for someone asking this question."""
 
 
 # ── Workers ───────────────────────────────────────────────────────────────────
@@ -172,14 +157,78 @@ def _worker_domain(domain, api_key, bucket):
     data = bucket["domain"] = _parse_json(text) or {"_error": f"JSON parse failed. Raw: {(text or '')[:200]}"}
 
 
+def _domain_from_url(url):
+    try:
+        netloc = urlparse(url).netloc.lower()
+    except Exception:
+        return ""
+    return re.sub(r'^www\.', '', netloc)
+
+
+def _extract_citations(content_blocks):
+    """Walk a web-search-enabled response and return the domains Claude
+    actually cited, in citation order — real answer-engine behavior, not a
+    recalled guess. Also reports whether Claude searched at all, so 'not
+    cited' can be told apart from 'never grounded in a search'."""
+    seen = set()
+    rankings = []
+    searched = False
+    for block in content_blocks:
+        btype = getattr(block, "type", None)
+        if btype in ("server_tool_use", "web_search_tool_result"):
+            searched = True
+        elif btype == "text":
+            for c in (getattr(block, "citations", None) or []):
+                if getattr(c, "type", None) != "web_search_result_location":
+                    continue
+                url = getattr(c, "url", None)
+                domain = _domain_from_url(url) if url else ""
+                if not domain or domain in seen:
+                    continue
+                seen.add(domain)
+                rankings.append({
+                    "rank":   len(rankings) + 1,
+                    "domain": domain,
+                    "title":  getattr(c, "title", "") or domain,
+                    "url":    url,
+                })
+    return rankings, searched
+
+
 def _rank_one(prompt, api_key):
-    text, err = _call_claude(RANKING_PROMPT.format(prompt=prompt), api_key, max_tokens=1800)
-    if err:
-        return {"_error": err}
-    data = _parse_json(text)
-    if data and "rankings" in data:
-        return data
-    return {"_error": f"JSON parse failed. Raw: {(text or '')[:200]}"}
+    """Ask Claude the query with live web search enabled and report the
+    sources it actually cited — the same mechanism AI-visibility tools like
+    Otterly use, instead of asking the model to recall a top-10 list."""
+    import anthropic
+    client = anthropic.Anthropic(api_key=api_key)
+    last_err = ""
+    for model in CLAUDE_MODELS:
+        try:
+            resp = client.messages.create(
+                model=model,
+                max_tokens=1800,
+                tools=[{
+                    "type": "web_search_20250305",
+                    "name": "web_search",
+                    "max_uses": WEB_SEARCH_MAX_USES,
+                }],
+                messages=[{"role": "user", "content": RANKING_PROMPT.format(prompt=prompt)}],
+            )
+            rankings, searched = _extract_citations(resp.content)
+            answer = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
+            return {"rankings": rankings, "grounded": searched, "answer": answer}
+        except anthropic.NotFoundError:
+            last_err = f"Model '{model}' not found"
+            continue
+        except anthropic.AuthenticationError:
+            return {"_error": "Invalid ANTHROPIC_API_KEY — check your Vercel environment variables."}
+        except anthropic.RateLimitError:
+            return {"_error": "Rate limit reached — try again in a few seconds."}
+        except anthropic.APITimeoutError:
+            return {"_error": "Claude API timed out — try again."}
+        except Exception as e:
+            return {"_error": f"{type(e).__name__}: {e}"}
+    return {"_error": f"No working model found. Last: {last_err}"}
 
 
 def _find_rank(rankings, domain):
@@ -251,10 +300,11 @@ def _run_all(job_id, domain, brand, prompts):
                 with lock:
                     prompt_reports[idx] = {
                         "prompt":       prompt,
-                        "query_intent": result.get("query_intent", ""),
                         "rankings":     rankings,
                         "domain_rank":  dom_rank,
                         "brand_rank":   brand_rank,
+                        "grounded":     result.get("grounded", False),
+                        "answer":       result.get("answer", ""),
                         "error":        result.get("_error"),
                     }
                     completed += 1
@@ -266,10 +316,12 @@ def _run_all(job_id, domain, brand, prompts):
     found_reports = [p for p in prompt_reports if p is not None and not p.get("error")]
     domain_found  = [p for p in found_reports if p.get("domain_rank")]
     brand_found   = [p for p in found_reports if brand and p.get("brand_rank")]
+    grounded      = [p for p in found_reports if p.get("grounded")]
 
     summary = {
         "total_prompts":       total,
         "completed_prompts":   len(found_reports),
+        "grounded_count":      len(grounded),
         "domain_found_count":  len(domain_found),
         "brand_found_count":   len(brand_found) if brand else None,
         "avg_domain_rank":     round(sum(p["domain_rank"] for p in domain_found) / len(domain_found), 1)

@@ -239,6 +239,10 @@ input.err{border-color:#ef4444}
 .rt-rank{font-weight:700;white-space:nowrap}
 .rt-rank.found{color:#4ade80}
 .rt-rank.notfound{color:#f87171}
+.rt-rank.nogrounded{color:var(--muted);font-weight:500;font-style:italic}
+.grounded-tag{font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;text-transform:uppercase;letter-spacing:.04em}
+.grounded-tag.on{background:rgba(74,222,128,.1);color:#4ade80;border:1px solid rgba(74,222,128,.2)}
+.grounded-tag.off{background:rgba(255,255,255,.05);color:var(--muted);border:1px solid rgba(255,255,255,.08)}
 .rt-top{color:var(--sub);white-space:nowrap}
 .rt-err{color:#f87171;font-size:11.5px}
 .rt-toggle{color:#60a5fa;font-size:11px;font-weight:600;white-space:nowrap}
@@ -335,7 +339,7 @@ input.err{border-color:#ef4444}
     <div class="fgroup">
       <label class="flabel" for="f-prompt">Search Queries <span class="opt-tag">(Optional — one per line, up to 50)</span></label>
       <textarea id="f-prompt" rows="5" placeholder="e.g. Best digital marketing agency in Noida&#10;Affordable SEO services for mortgage websites&#10;Top SEO companies in India&#10;...up to 50 queries, one per line"></textarea>
-      <div class="hint" id="prompt-hint">If provided, Claude will rank the top 10 results for each query and show your domain's and brand's exact position in a report table. One query per line (commas also work).</div>
+      <div class="hint" id="prompt-hint">If provided, Claude will search the web live for each query and report whether — and where — your domain and brand were actually cited in its answer. One query per line (commas also work).</div>
     </div>
     <button class="btn-run" id="btn-check">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -362,7 +366,7 @@ input.err{border-color:#ef4444}
     <div class="l-steps">
       <div class="l-step-item active"><span class="step-dot active"></span> Checking what Claude knows about your domain</div>
       <div class="l-step-item active"><span class="step-dot active"></span> Generating expected prompts &amp; suggestions</div>
-      <div class="l-step-item" id="l-rank-step"><span class="step-dot"></span> Running prompt ranking checks</div>
+      <div class="l-step-item" id="l-rank-step"><span class="step-dot"></span> Running live web-search citation checks</div>
     </div>
     <div class="l-progress-wrap hidden" id="l-progress-wrap">
       <div class="l-progress-track"><div class="l-progress-fill" id="l-progress-fill"></div></div>
@@ -533,15 +537,25 @@ function buildRanking(reports, summary, domain, brand) {
         <div class="rsum-lbl">Queries checked</div>
       </div>
       <div class="rsum-chip">
+        <div class="rsum-num" style="color:${summary.grounded_count ? '#4ade80':'#f87171'}">${summary.grounded_count||0}/${summary.total_prompts}</div>
+        <div class="rsum-lbl">Queries actually searched live</div>
+      </div>
+      <div class="rsum-chip">
         <div class="rsum-num" style="color:${summary.domain_found_count ? '#4ade80':'#f87171'}">${summary.domain_found_count}/${summary.total_prompts}</div>
-        <div class="rsum-lbl">Domain in top 10${summary.avg_domain_rank ? ' · avg #'+summary.avg_domain_rank : ''}</div>
+        <div class="rsum-lbl">Domain cited${summary.avg_domain_rank ? ' · avg #'+summary.avg_domain_rank : ''}</div>
       </div>
       ${brand ? `
       <div class="rsum-chip">
         <div class="rsum-num" style="color:${summary.brand_found_count ? '#4ade80':'#f87171'}">${summary.brand_found_count||0}/${summary.total_prompts}</div>
-        <div class="rsum-lbl">Brand in top 10${summary.avg_brand_rank ? ' · avg #'+summary.avg_brand_rank : ''}</div>
+        <div class="rsum-lbl">Brand cited${summary.avg_brand_rank ? ' · avg #'+summary.avg_brand_rank : ''}</div>
       </div>` : ''}
     </div>`;
+
+  const rankCell = (rank, grounded) => {
+    if (rank) return `<span class="rt-rank found">#${rank}</span>`;
+    if (grounded === false) return `<span class="rt-rank nogrounded" title="Claude answered from memory without searching the web for this query">not searched</span>`;
+    return `<span class="rt-rank notfound">not cited</span>`;
+  };
 
   const rows = reports.map((r, i) => {
     if (r.error) {
@@ -552,18 +566,18 @@ function buildRanking(reports, summary, domain, brand) {
         </tr>`;
     }
     const top1 = (r.rankings||[])[0];
-    const domCell = r.domain_rank
-      ? `<span class="rt-rank found">#${r.domain_rank}</span>` : `<span class="rt-rank notfound">—</span>`;
-    const brandCell = brand
-      ? (r.brand_rank ? `<span class="rt-rank found">#${r.brand_rank}</span>` : `<span class="rt-rank notfound">—</span>`)
-      : '';
+    const domCell = rankCell(r.domain_rank, r.grounded);
+    const brandCell = brand ? rankCell(r.brand_rank, r.grounded) : '';
+    const groundedTag = r.grounded
+      ? `<span class="grounded-tag on">live search</span>`
+      : `<span class="grounded-tag off">no search</span>`;
     return `
       <tr class="rt-expandable" data-i="${i}">
-        <td class="rt-q">"${esc(r.prompt)}"</td>
+        <td class="rt-q">"${esc(r.prompt)}"${groundedTag}</td>
         <td>${domCell}</td>
         ${brand ? `<td>${brandCell}</td>` : ''}
         <td class="rt-top">${top1 ? esc(top1.title||top1.domain||'—') : '—'}</td>
-        <td class="rt-toggle">View top 10 ▾</td>
+        <td class="rt-toggle">View cited sources ▾</td>
       </tr>
       <tr class="rt-detail-row hidden" id="rt-detail-${i}">
         <td colspan="${brand?5:4}">
@@ -571,8 +585,10 @@ function buildRanking(reports, summary, domain, brand) {
             ${(r.rankings||[]).map(item => `
               <div class="rt-detail-item${r.domain_rank===item.rank?' yours':''}">
                 <span class="n">${item.rank}.</span>
-                <span>${esc(item.title||'—')} — <span style="color:#4ade80">${esc(item.domain||'—')}</span>${r.domain_rank===item.rank?' <strong>★ your domain</strong>':''}</span>
-              </div>`).join('') || '<div class="rt-detail-item">No ranking data.</div>'}
+                <span>${esc(item.title||'—')} — <a href="${esc(item.url||'#')}" target="_blank" rel="noopener" style="color:#4ade80">${esc(item.domain||'—')}</a>${r.domain_rank===item.rank?' <strong>★ your domain</strong>':''}</span>
+              </div>`).join('') || (r.grounded===false
+                ? '<div class="rt-detail-item">Claude answered from memory without searching the web for this query — no live citations to show.</div>'
+                : '<div class="rt-detail-item">Claude searched but didn\'t cite any sources in its answer.</div>')}
           </div>
         </td>
       </tr>`;
@@ -582,7 +598,7 @@ function buildRanking(reports, summary, domain, brand) {
     <div class="sec-card">
       <div class="sec-header blue">
         <span class="sec-icon">📊</span>
-        <span class="sec-title">Multi-Prompt Ranking Report</span>
+        <span class="sec-title">Live Citation Report</span>
         <span class="sec-badge" style="background:rgba(59,158,255,.1);color:#60a5fa;border:1px solid rgba(59,158,255,.2)">${reports.length} queries</span>
       </div>
       <div class="sec-body">
@@ -607,7 +623,7 @@ document.addEventListener('click', e => {
   if (!detail) return;
   const open = !detail.classList.contains('hidden');
   detail.classList.toggle('hidden', open);
-  row.querySelector('.rt-toggle').textContent = open ? 'View top 10 ▾' : 'Hide ▴';
+  row.querySelector('.rt-toggle').textContent = open ? 'View cited sources ▾' : 'Hide ▴';
 });
 
 /* ── Section 3: Expected Prompts ── */
@@ -736,8 +752,8 @@ function updatePromptHint() {
   const list = splitPrompts($('f-prompt').value);
   const over = list.length > 50;
   $('prompt-hint').textContent = list.length
-    ? `${Math.min(list.length,50)}${over?' (only the first 50 will be used)':''} quer${list.length===1?'y':'ies'} detected. Claude will rank the top 10 results for each.`
-    : 'If provided, Claude will rank the top 10 results for each query and show your domain\'s and brand\'s exact position in a report table. One query per line (commas also work).';
+    ? `${Math.min(list.length,50)}${over?' (only the first 50 will be used)':''} quer${list.length===1?'y':'ies'} detected. Claude will search the web live for each and report the sources it actually cites.`
+    : 'If provided, Claude will search the web live for each query and report whether — and where — your domain and brand were actually cited in its answer. One query per line (commas also work).';
   $('prompt-hint').style.color = over ? '#fbbf24' : '';
 }
 $('f-prompt').addEventListener('input', updatePromptHint);
