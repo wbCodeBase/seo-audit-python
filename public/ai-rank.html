@@ -419,6 +419,12 @@ function confidencePct(level){
 function priorityClass(p){ return {high:'sug-p-high',medium:'sug-p-medium',low:'sug-p-low'}[p]||'sug-p-low'; }
 function prioChip(p){ return {high:'ph',medium:'pm',low:'pl'}[p]||'pl'; }
 function likelihoodClass(l){ return {high:'lh-high',medium:'lh-medium',low:'lh-low'}[l]||'lh-low'; }
+function scoreColor(score){
+  if (score >= 70) return '#4ade80';
+  if (score >= 40) return '#fbbf24';
+  if (score > 0)   return '#f97316';
+  return '#f87171';
+}
 
 /* ── Build score chips ── */
 function buildScoreBar(dk, summary) {
@@ -542,19 +548,32 @@ function buildRanking(reports, summary, domain, brand) {
       </div>
       <div class="rsum-chip">
         <div class="rsum-num" style="color:${summary.domain_found_count ? '#4ade80':'#f87171'}">${summary.domain_found_count}/${summary.total_prompts}</div>
-        <div class="rsum-lbl">Domain cited${summary.avg_domain_rank ? ' · avg #'+summary.avg_domain_rank : ''}</div>
+        <div class="rsum-lbl">Domain found${summary.avg_domain_rank ? ' · avg #'+summary.avg_domain_rank : ''}</div>
       </div>
+      ${summary.avg_score !== null && summary.avg_score !== undefined ? `
+      <div class="rsum-chip">
+        <div class="rsum-num" style="color:${scoreColor(summary.avg_score)}">${summary.avg_score}</div>
+        <div class="rsum-lbl">Avg AI Visibility Score</div>
+      </div>` : ''}
       ${brand ? `
       <div class="rsum-chip">
         <div class="rsum-num" style="color:${summary.brand_found_count ? '#4ade80':'#f87171'}">${summary.brand_found_count||0}/${summary.total_prompts}</div>
-        <div class="rsum-lbl">Brand cited${summary.avg_brand_rank ? ' · avg #'+summary.avg_brand_rank : ''}</div>
+        <div class="rsum-lbl">Brand found${summary.avg_brand_rank ? ' · avg #'+summary.avg_brand_rank : ''}</div>
       </div>` : ''}
     </div>`;
 
   const rankCell = (rank, grounded) => {
     if (rank) return `<span class="rt-rank found">#${rank}</span>`;
     if (grounded === false) return `<span class="rt-rank nogrounded" title="Claude answered from memory without searching the web for this query">not searched</span>`;
-    return `<span class="rt-rank notfound">not cited</span>`;
+    return `<span class="rt-rank notfound">not found</span>`;
+  };
+
+  const intentTag = intent => intent
+    ? `<span class="intent-tag" style="margin-top:0">${esc(intent)}</span>` : '';
+
+  const scoreCell = score => {
+    if (score === null || score === undefined) return `<span class="rt-rank nogrounded" title="Claude never searched the web for this query, so there's no signal to score">—</span>`;
+    return `<span class="rt-rank found" style="color:${scoreColor(score)};border-color:${scoreColor(score)}44" title="AI Visibility Score: rank position + citation bonus, 0-100">${score}</span>`;
   };
 
   const rows = reports.map((r, i) => {
@@ -562,7 +581,7 @@ function buildRanking(reports, summary, domain, brand) {
       return `
         <tr>
           <td class="rt-q">"${esc(r.prompt)}"</td>
-          <td colspan="4" class="rt-err">⚠ ${esc(r.error)}</td>
+          <td colspan="6" class="rt-err">⚠ ${esc(r.error)}</td>
         </tr>`;
     }
     const top1 = (r.rankings||[])[0];
@@ -574,21 +593,23 @@ function buildRanking(reports, summary, domain, brand) {
     return `
       <tr class="rt-expandable" data-i="${i}">
         <td class="rt-q">"${esc(r.prompt)}"${groundedTag}</td>
+        <td>${intentTag(r.intent)}</td>
+        <td>${scoreCell(r.score)}</td>
         <td>${domCell}</td>
         ${brand ? `<td>${brandCell}</td>` : ''}
         <td class="rt-top">${top1 ? esc(top1.title||top1.domain||'—') : '—'}</td>
-        <td class="rt-toggle">View cited sources ▾</td>
+        <td class="rt-toggle">View search results ▾</td>
       </tr>
       <tr class="rt-detail-row hidden" id="rt-detail-${i}">
-        <td colspan="${brand?5:4}">
+        <td colspan="${brand?7:6}">
           <div class="rt-detail-list">
             ${(r.rankings||[]).map(item => `
               <div class="rt-detail-item${r.domain_rank===item.rank?' yours':''}">
                 <span class="n">${item.rank}.</span>
-                <span>${esc(item.title||'—')} — <a href="${esc(item.url||'#')}" target="_blank" rel="noopener" style="color:#4ade80">${esc(item.domain||'—')}</a>${r.domain_rank===item.rank?' <strong>★ your domain</strong>':''}</span>
+                <span>${esc(item.title||'—')} — <a href="${esc(item.url||'#')}" target="_blank" rel="noopener" style="color:#4ade80">${esc(item.domain||'—')}</a>${item.cited?' <span class="intent-tag" style="margin-top:0">cited in answer</span>':''}${r.domain_rank===item.rank?' <strong>★ your domain</strong>':''}</span>
               </div>`).join('') || (r.grounded===false
-                ? '<div class="rt-detail-item">Claude answered from memory without searching the web for this query — no live citations to show.</div>'
-                : '<div class="rt-detail-item">Claude searched but didn\'t cite any sources in its answer.</div>')}
+                ? '<div class="rt-detail-item">Claude answered from memory without searching the web for this query — no live results to show.</div>'
+                : '<div class="rt-detail-item">Claude searched but the search returned no usable results.</div>')}
           </div>
         </td>
       </tr>`;
@@ -598,7 +619,7 @@ function buildRanking(reports, summary, domain, brand) {
     <div class="sec-card">
       <div class="sec-header blue">
         <span class="sec-icon">📊</span>
-        <span class="sec-title">Live Citation Report</span>
+        <span class="sec-title">Live Search Ranking Report</span>
         <span class="sec-badge" style="background:rgba(59,158,255,.1);color:#60a5fa;border:1px solid rgba(59,158,255,.2)">${reports.length} queries</span>
       </div>
       <div class="sec-body">
@@ -606,7 +627,7 @@ function buildRanking(reports, summary, domain, brand) {
         <div class="rtable-wrap">
           <table class="rtable">
             <thead><tr>
-              <th>Query</th><th>Domain Rank</th>${brand?'<th>Brand Rank</th>':''}<th>#1 Result</th><th></th>
+              <th>Query</th><th>Intent</th><th>Score</th><th>Domain Rank</th>${brand?'<th>Brand Rank</th>':''}<th>#1 Result</th><th></th>
             </tr></thead>
             <tbody>${rows}</tbody>
           </table>

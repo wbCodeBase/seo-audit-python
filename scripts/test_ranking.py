@@ -38,7 +38,10 @@ def _load_env_file(path=".env"):
 
 _load_env_file()
 
-from ai_rank_run import _rank_one, _worker_domain, _find_rank, _find_rank_by_brand  # noqa: E402
+from ai_rank_run import (  # noqa: E402
+    _rank_one, _worker_domain, _find_rank, _find_rank_by_brand,
+    _classify_intent, _visibility_score, _cited_for_rank,
+)
 
 
 def main():
@@ -62,7 +65,7 @@ def main():
         print(json.dumps(profile.get("domain_knowledge", {}), indent=2)[:1500])
 
     for q in queries:
-        print(f'\n=== Query: "{q}" ===')
+        print(f'\n=== Query: "{q}"  (intent: {_classify_intent(q)}) ===')
         result = _rank_one(q, api_key)
         if result.get("_error"):
             print("ERROR:", result["_error"])
@@ -71,11 +74,14 @@ def main():
         print("grounded (actually searched the web):", result["grounded"])
         rankings = result["rankings"]
         if not rankings:
-            print("No sources cited." if result["grounded"] else "Claude answered from memory, no search performed.")
+            print("No search results returned." if result["grounded"] else "Claude answered from memory, no search performed.")
         for item in rankings:
-            print(f"  #{item['rank']}  {item['title']}  —  {item['domain']}  ({item['url']})")
+            cited = " [cited in answer]" if item.get("cited") else ""
+            print(f"  #{item['rank']}  {item['title']}  —  {item['domain']}  ({item['url']}){cited}")
 
-        print("domain_rank:", _find_rank(rankings, domain))
+        dom_rank = _find_rank(rankings, domain)
+        print("domain_rank:", dom_rank)
+        print("score:", _visibility_score(dom_rank, result["grounded"], _cited_for_rank(rankings, dom_rank)))
         if brand:
             print("brand_rank:", _find_rank_by_brand(rankings, brand))
 

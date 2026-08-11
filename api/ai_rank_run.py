@@ -165,40 +165,83 @@ def _domain_from_url(url):
     return re.sub(r'^www\.', '', netloc)
 
 
-def _extract_citations(content_blocks):
-    """Walk a web-search-enabled response and return the domains Claude
-    actually cited, in citation order — real answer-engine behavior, not a
-    recalled guess. Also reports whether Claude searched at all, so 'not
-    cited' can be told apart from 'never grounded in a search'."""
-    seen = set()
-    rankings = []
+def _extract_rankings(content_blocks):
+    """Walk a web-search-enabled response and build a ranked list of domains.
+
+    Previously this only looked at inline `citations` on the text blocks —
+    i.e. the handful of sources Claude happened to quote in its prose. That
+    undercounts badly: Claude often mentions a company by name without
+    attaching an inline citation marker to that sentence, so a domain that
+    plainly appears in the answer (and in the underlying search results)
+    would still be scored "not cited". The `web_search_tool_result` block
+    carries the actual ranked result list the search backend returned for
+    each query Claude issued — that's the real SERP-like data and is what we
+    rank against now. Inline citations are kept as a "cited" flag per item
+    so the UI can still show which sources Claude directly quoted.
+    Also reports whether Claude searched at all, so 'not found' can be told
+    apart from 'never grounded in a search'."""
+    seen = {}
+    order = []
+    cited_domains = set()
     searched = False
+
     for block in content_blocks:
         btype = getattr(block, "type", None)
-        if btype in ("server_tool_use", "web_search_tool_result"):
+
+        if btype == "server_tool_use":
             searched = True
+
+        elif btype == "web_search_tool_result":
+            searched = True
+            content = getattr(block, "content", None) or []
+            if not isinstance(content, list):
+                continue  # WebSearchToolResultError — search failed for this call
+            for result in content:
+                url = getattr(result, "url", None)
+                if not url:
+                    continue
+                domain = _domain_from_url(url)
+                if not domain or domain in seen:
+                    continue
+                seen[domain] = {
+                    "domain": domain,
+                    "title":  getattr(result, "title", "") or domain,
+                    "url":    url,
+                }
+                order.append(domain)
+
         elif btype == "text":
             for c in (getattr(block, "citations", None) or []):
                 if getattr(c, "type", None) != "web_search_result_location":
                     continue
                 url = getattr(c, "url", None)
                 domain = _domain_from_url(url) if url else ""
-                if not domain or domain in seen:
+                if not domain:
                     continue
-                seen.add(domain)
-                rankings.append({
-                    "rank":   len(rankings) + 1,
-                    "domain": domain,
-                    "title":  getattr(c, "title", "") or domain,
-                    "url":    url,
-                })
+                cited_domains.add(domain)
+                if domain not in seen:
+                    seen[domain] = {
+                        "domain": domain,
+                        "title":  getattr(c, "title", "") or domain,
+                        "url":    url,
+                    }
+                    order.append(domain)
+
+    rankings = []
+    for i, domain in enumerate(order):
+        item = seen[domain]
+        item["rank"]  = i + 1
+        item["cited"] = domain in cited_domains
+        rankings.append(item)
+
     return rankings, searched
 
 
 def _rank_one(prompt, api_key):
     """Ask Claude the query with live web search enabled and report the
-    sources it actually cited — the same mechanism AI-visibility tools like
-    Otterly use, instead of asking the model to recall a top-10 list."""
+    ranked results the search backend actually returned — the same mechanism
+    AI-visibility tools like Otterly use, instead of asking the model to
+    recall a top-10 list from memory."""
     import anthropic
     client = anthropic.Anthropic(api_key=api_key)
     last_err = ""
@@ -214,7 +257,7 @@ def _rank_one(prompt, api_key):
                 }],
                 messages=[{"role": "user", "content": RANKING_PROMPT.format(prompt=prompt)}],
             )
-            rankings, searched = _extract_citations(resp.content)
+            rankings, searched = _extract_rankings(resp.content)
             answer = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
             return {"rankings": rankings, "grounded": searched, "answer": answer}
         except anthropic.NotFoundError:
@@ -255,6 +298,63 @@ def _find_rank_by_brand(rankings, brand):
         if needle in t or needle in d:
             return item["rank"]
     return None
+
+
+_LOCAL_HINTS = (
+    "near me", "noida", "delhi", "mumbai", "bangalore", "bengaluru", "chennai",
+    "hyderabad", "pune", "gurgaon", "gurugram", "kolkata", "ahmedabad", "jaipur",
+    "in india", "in usa", "in uk", "in canada", "in dubai", "in uae",
+)
+_TRANSACTIONAL_HINTS = (
+    "partners", "partner", "hire", "agency", "agencies", "consultant", "consultants",
+    "company", "companies", "provider", "providers", "services", "service",
+    "implementation", "pricing", "price", "cost", "quote", "buy", "vendor", "vendors",
+)
+_COMPARISON_HINTS = ("vs", "versus", "best", "top", "compare", "comparison", "alternative", "alternatives")
+_INFORMATIONAL_HINTS = ("what is", "what are", "how to", "how does", "why", "guide", "tips", "meaning")
+
+
+def _classify_intent(query):
+    """Lightweight, deterministic keyword-intent classifier — no extra API
+    call needed. Order matters: local/transactional service-seeking queries
+    ('X partners in Noida') should win over a generic 'best/top' comparison
+    match, since those words can co-occur."""
+    q = f" {query.strip().lower()} "
+    if any(h in q for h in _LOCAL_HINTS):
+        return "local"
+    if any(h in q for h in _INFORMATIONAL_HINTS):
+        return "informational"
+    if any(h in q for h in _COMPARISON_HINTS):
+        return "comparison"
+    if any(h in q for h in _TRANSACTIONAL_HINTS):
+        return "transactional"
+    return "informational"
+
+
+def _visibility_score(rank, grounded, cited):
+    """0-100 AI Visibility Score for one query, built only from data we
+    already have (no keyword-volume API): higher rank position scores
+    higher, an inline citation in Claude's answer adds a bonus, not being
+    found at all (while the query WAS actually searched live) scores 0.
+    None means we have no signal because Claude never grounded the answer
+    in a search for this query, so scoring it would be meaningless."""
+    if not grounded:
+        return None
+    if not rank:
+        return 0
+    score = max(5, 100 - (rank - 1) * 12)
+    if cited:
+        score = min(100, score + 10)
+    return score
+
+
+def _cited_for_rank(rankings, rank):
+    if not rank:
+        return False
+    for item in rankings or []:
+        if item.get("rank") == rank:
+            return bool(item.get("cited"))
+    return False
 
 
 def _run_all(job_id, domain, brand, prompts):
@@ -298,12 +398,15 @@ def _run_all(job_id, domain, brand, prompts):
                 brand_rank = _find_rank_by_brand(rankings, brand) if brand else None
 
                 with lock:
+                    grounded = result.get("grounded", False)
                     prompt_reports[idx] = {
                         "prompt":       prompt,
+                        "intent":       _classify_intent(prompt),
                         "rankings":     rankings,
                         "domain_rank":  dom_rank,
                         "brand_rank":   brand_rank,
-                        "grounded":     result.get("grounded", False),
+                        "score":        _visibility_score(dom_rank, grounded, _cited_for_rank(rankings, dom_rank)),
+                        "grounded":     grounded,
                         "answer":       result.get("answer", ""),
                         "error":        result.get("_error"),
                     }
@@ -317,6 +420,7 @@ def _run_all(job_id, domain, brand, prompts):
     domain_found  = [p for p in found_reports if p.get("domain_rank")]
     brand_found   = [p for p in found_reports if brand and p.get("brand_rank")]
     grounded      = [p for p in found_reports if p.get("grounded")]
+    scored        = [p for p in found_reports if p.get("score") is not None]
 
     summary = {
         "total_prompts":       total,
@@ -328,6 +432,8 @@ def _run_all(job_id, domain, brand, prompts):
                                 if domain_found else None,
         "avg_brand_rank":      round(sum(p["brand_rank"] for p in brand_found) / len(brand_found), 1)
                                 if brand_found else None,
+        "avg_score":           round(sum(p["score"] for p in scored) / len(scored), 1)
+                                if scored else None,
     }
 
     store_set(job_id, {
