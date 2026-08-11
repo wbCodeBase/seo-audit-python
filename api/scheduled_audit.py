@@ -287,6 +287,23 @@ def _read_keywords(svc, sheet_id):
 
 
 def _ensure_results_header(svc, sheet_id):
+    """Values.get/update can't create a missing tab — that needs a separate
+    batchUpdate addSheet request. Create the Results tab first if it doesn't
+    exist yet, then make sure it has a header row."""
+    meta   = svc.spreadsheets().get(spreadsheetId=sheet_id, fields="sheets.properties.title").execute()
+    titles = [s["properties"]["title"] for s in meta.get("sheets", [])]
+
+    if "Results" not in titles:
+        svc.spreadsheets().batchUpdate(
+            spreadsheetId=sheet_id,
+            body={"requests": [{"addSheet": {"properties": {"title": "Results"}}}]},
+        ).execute()
+        svc.spreadsheets().values().update(
+            spreadsheetId=sheet_id, range="Results!A1",
+            valueInputOption="RAW", body={"values": [RESULTS_HEADER]},
+        ).execute()
+        return
+
     resp = svc.spreadsheets().values().get(
         spreadsheetId=sheet_id, range="Results!A1:M1"
     ).execute()
