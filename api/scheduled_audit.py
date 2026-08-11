@@ -34,18 +34,25 @@ Results tab — header written automatically on first run:
   Date | Time (IST) | Project | Keyword | Intent | Entity Type |
   Entity Domain | Rank | Score | Cited In Answer | #1 Result | Grounded | Error
 """
-import base64, json, os
+import base64, json, os, re
 from datetime import datetime, timezone, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-from ai_rank_run import (
-    _rank_one, _classify_intent, _visibility_score,
-    _cited_for_rank, _find_rank, _find_rank_by_brand,
-)
+# Deliberately self-contained rather than importing from ai_rank_run.py:
+# Vercel's Python builder packages each api/*.py as its own isolated
+# function, and every other file in this project avoids cross-file imports
+# within api/ for that reason (see get_redis()/store_set() duplicated in
+# audit_run.py, send_email.py, ai_rank_run.py, ai_rank_poll.py etc). A
+# module-level `from ai_rank_run import ...` here crashed the whole function
+# at import time — before any of this file's own error handling could run.
+# These are copies of the ranking helpers in ai_rank_run.py; keep them in
+# sync if that file's ranking logic changes.
 
-MAX_WORKERS = 6
+CLAUDE_MODELS        = ["claude-sonnet-5", "claude-opus-4-8"]
+MAX_WORKERS           = 6
+WEB_SEARCH_MAX_USES   = 5  # cap searches per query; billed at $10/1,000 searches on top of tokens
 IST = timezone(timedelta(hours=5, minutes=30))
 
 RESULTS_HEADER = [
@@ -53,6 +60,188 @@ RESULTS_HEADER = [
     "Entity Type", "Entity Domain", "Rank", "Score",
     "Cited In Answer", "#1 Result", "Grounded", "Error",
 ]
+
+RANKING_PROMPT = """\
+{prompt}
+
+Use web search to find current, real information before answering, and cite the sources you use. Answer the way you normally would for someone asking this question."""
+
+
+# ── Ranking helpers (mirrors ai_rank_run.py) ────────────────────────────────
+
+def _domain_from_url(url):
+    try:
+        netloc = urlparse(url).netloc.lower()
+    except Exception:
+        return ""
+    return re.sub(r'^www\.', '', netloc)
+
+
+def _extract_rankings(content_blocks):
+    """See ai_rank_run.py's _extract_rankings for the full rationale: ranks
+    from the actual web_search_tool_result data (the real search results),
+    not just from inline citations, with a 'cited' flag kept per item."""
+    seen = {}
+    order = []
+    cited_domains = set()
+    searched = False
+
+    for block in content_blocks:
+        btype = getattr(block, "type", None)
+
+        if btype == "server_tool_use":
+            searched = True
+
+        elif btype == "web_search_tool_result":
+            searched = True
+            content = getattr(block, "content", None) or []
+            if not isinstance(content, list):
+                continue
+            for result in content:
+                url = getattr(result, "url", None)
+                if not url:
+                    continue
+                domain = _domain_from_url(url)
+                if not domain or domain in seen:
+                    continue
+                seen[domain] = {
+                    "domain": domain,
+                    "title":  getattr(result, "title", "") or domain,
+                    "url":    url,
+                }
+                order.append(domain)
+
+        elif btype == "text":
+            for c in (getattr(block, "citations", None) or []):
+                if getattr(c, "type", None) != "web_search_result_location":
+                    continue
+                url = getattr(c, "url", None)
+                domain = _domain_from_url(url) if url else ""
+                if not domain:
+                    continue
+                cited_domains.add(domain)
+                if domain not in seen:
+                    seen[domain] = {
+                        "domain": domain,
+                        "title":  getattr(c, "title", "") or domain,
+                        "url":    url,
+                    }
+                    order.append(domain)
+
+    rankings = []
+    for i, domain in enumerate(order):
+        item = seen[domain]
+        item["rank"]  = i + 1
+        item["cited"] = domain in cited_domains
+        rankings.append(item)
+
+    return rankings, searched
+
+
+def _rank_one(prompt, api_key):
+    import anthropic
+    client = anthropic.Anthropic(api_key=api_key)
+    last_err = ""
+    for model in CLAUDE_MODELS:
+        try:
+            resp = client.messages.create(
+                model=model,
+                max_tokens=1800,
+                tools=[{
+                    "type": "web_search_20250305",
+                    "name": "web_search",
+                    "max_uses": WEB_SEARCH_MAX_USES,
+                }],
+                messages=[{"role": "user", "content": RANKING_PROMPT.format(prompt=prompt)}],
+            )
+            rankings, searched = _extract_rankings(resp.content)
+            answer = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
+            return {"rankings": rankings, "grounded": searched, "answer": answer}
+        except anthropic.NotFoundError:
+            last_err = f"Model '{model}' not found"
+            continue
+        except anthropic.AuthenticationError:
+            return {"_error": "Invalid ANTHROPIC_API_KEY — check your Vercel environment variables."}
+        except anthropic.RateLimitError:
+            return {"_error": "Rate limit reached — try again in a few seconds."}
+        except anthropic.APITimeoutError:
+            return {"_error": "Claude API timed out — try again."}
+        except Exception as e:
+            return {"_error": f"{type(e).__name__}: {e}"}
+    return {"_error": f"No working model found. Last: {last_err}"}
+
+
+def _find_rank(rankings, domain):
+    if not domain or not rankings:
+        return None
+    clean = re.sub(r'^https?://', '', domain, flags=re.I)
+    clean = re.sub(r'^www\.', '', clean, flags=re.I).rstrip('/').lower()
+    brand = clean.split('.')[0] if '.' in clean else clean
+    for item in rankings:
+        d = item.get("domain", "").lower()
+        t = item.get("title", "").lower()
+        if clean in d or d in clean or (brand and (brand in d or brand in t)):
+            return item["rank"]
+    return None
+
+
+def _find_rank_by_brand(rankings, brand):
+    if not brand or not rankings:
+        return None
+    needle = brand.strip().lower()
+    for item in rankings:
+        d = item.get("domain", "").lower()
+        t = item.get("title", "").lower()
+        if needle in t or needle in d:
+            return item["rank"]
+    return None
+
+
+_LOCAL_HINTS = (
+    "near me", "noida", "delhi", "mumbai", "bangalore", "bengaluru", "chennai",
+    "hyderabad", "pune", "gurgaon", "gurugram", "kolkata", "ahmedabad", "jaipur",
+    "in india", "in usa", "in uk", "in canada", "in dubai", "in uae",
+)
+_TRANSACTIONAL_HINTS = (
+    "partners", "partner", "hire", "agency", "agencies", "consultant", "consultants",
+    "company", "companies", "provider", "providers", "services", "service",
+    "implementation", "pricing", "price", "cost", "quote", "buy", "vendor", "vendors",
+)
+_COMPARISON_HINTS = ("vs", "versus", "best", "top", "compare", "comparison", "alternative", "alternatives")
+_INFORMATIONAL_HINTS = ("what is", "what are", "how to", "how does", "why", "guide", "tips", "meaning")
+
+
+def _classify_intent(query):
+    q = f" {query.strip().lower()} "
+    if any(h in q for h in _LOCAL_HINTS):
+        return "local"
+    if any(h in q for h in _INFORMATIONAL_HINTS):
+        return "informational"
+    if any(h in q for h in _COMPARISON_HINTS):
+        return "comparison"
+    if any(h in q for h in _TRANSACTIONAL_HINTS):
+        return "transactional"
+    return "informational"
+
+
+def _visibility_score(rank, grounded, cited):
+    if not grounded:
+        return None
+    if not rank:
+        return 0
+    score = max(5, 100 - (rank - 1) * 12)
+    if cited:
+        score = min(100, score + 10)
+    return score
+
+
+def _cited_for_rank(rankings, rank):
+    if not rank:
+        return False
+    for item in rankings or []:
+        if item.get("rank") == rank:
+            return bool(item.get("cited"))
+    return False
 
 
 # ── Google Sheets ────────────────────────────────────────────────────────────
