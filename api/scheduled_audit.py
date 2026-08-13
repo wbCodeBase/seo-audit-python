@@ -332,6 +332,10 @@ def _rank_one_openai(prompt, api_key):
                 input=RANKING_PROMPT.format(prompt=prompt),
                 tools=[{"type": "web_search", "search_context_size": "high"}],
                 max_output_tokens=1800,
+                # Opt-in field: without this, action.sources always comes back
+                # empty and rankings silently fall back to citation-only data —
+                # the same under-counting bug the Claude side had before.
+                include=["web_search_call.action.sources"],
             )
             rankings, searched = _extract_rankings_openai(resp.output)
             return {"rankings": rankings, "grounded": searched, "answer": resp.output_text}
