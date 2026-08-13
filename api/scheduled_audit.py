@@ -453,13 +453,38 @@ def _ensure_results_header(svc, sheet_id, tab):
         ).execute()
 
 
+def _next_empty_row(svc, sheet_id, tab):
+    """The row right after the last row that has anything in column A.
+    Deliberately not using values.append()'s own "find the table and append
+    after it" heuristic here: that heuristic finds the first contiguous
+    block of data and is documented to stop at the first fully-empty row,
+    which is exactly what we're about to introduce on purpose as a
+    date separator — relying on it could silently start inserting each new
+    day's block back at the FIRST gap instead of the true bottom of the
+    sheet. Computing the target row explicitly and writing with update()
+    sidesteps that ambiguity entirely."""
+    resp = svc.spreadsheets().values().get(
+        spreadsheetId=sheet_id, range=_qrange(tab, "A:A")
+    ).execute()
+    return len(resp.get("values", [])) + 1
+
+
 def _append_results(svc, sheet_id, tab, rows):
+    """Writes this run's rows starting at the real next empty row, prefixed
+    with one blank row IF the tab already has data from a previous run — so
+    each day's block is visually separated when scrolling the sheet. No
+    leading blank on the very first population of a tab, since the header
+    row already marks that boundary."""
     if not rows:
         return
-    svc.spreadsheets().values().append(
-        spreadsheetId=sheet_id, range=_qrange(tab, "A1"),
-        valueInputOption="RAW", insertDataOption="INSERT_ROWS",
-        body={"values": rows},
+    next_row       = _next_empty_row(svc, sheet_id, tab)
+    has_prior_data = next_row > 2  # row 1 is the header; row 2+ already used means real data exists
+    blank_row      = [""] * len(RESULTS_HEADER)
+    payload        = ([blank_row] + rows) if has_prior_data else rows
+
+    svc.spreadsheets().values().update(
+        spreadsheetId=sheet_id, range=_qrange(tab, f"A{next_row}"),
+        valueInputOption="RAW", body={"values": payload},
     ).execute()
 
 
