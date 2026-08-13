@@ -132,11 +132,27 @@ append-only log, so you always have the full history to look back on.
 | **#1 Result** | Whichever domain came out on top overall for that query, for context |
 | **Grounded** | `yes` if the AI actually performed a live web search for this query at all. `no` means it answered from memory without searching — in that case Rank/Score are meaningless and will be blank, because there was no live search to rank against. |
 | **Error** | Only filled in if that specific keyword failed to run (rate limit, API issue, etc.) — everything else on that row will be blank when this is filled in |
+| **Answer Position** | **The order this entity was first mentioned in the AI's own written answer** — 1 means it was the first thing the AI talked about/recommended. This is different from Rank on purpose: Rank is the AI's *raw search results*, Answer Position is what the AI *chose to lead with* after reading them, which is a separate editorial step the model does. Blank means it was never mentioned in the written answer at all, even if it did show up in Rank. |
 
-**The two numbers to actually pay attention to are Rank and Cited In
-Answer** — Rank tells you if you're being *found*, Cited tells you if
-you're being *used*. A `yes` in Cited In Answer is worth more than a good
-Rank with a `no`.
+**Rank vs. Answer Position — these can legitimately disagree, and that's
+not a bug.** If you manually ask Claude or ChatGPT the same question in
+their normal chat interface and it gives you a numbered "here's my
+shortlist" answer, that numbered order is what **Answer Position**
+tracks — not Rank. Rank reflects the underlying search results the AI's
+tool call returned (closer to a raw SERP); Answer Position reflects how
+the AI decided to present things afterward, once it had read and weighed
+those results. A competitor can rank low in raw search yet still get
+listed first in the AI's actual written recommendation — Answer Position
+is what catches that.
+
+**The three numbers to actually pay attention to, in order of
+importance: Answer Position, then Cited In Answer, then Rank.** Answer
+Position tells you how prominently the AI recommends you when it actually
+writes an answer — the thing a real user reading that answer would see
+first. Cited tells you whether you were used in the answer at all. Rank
+only tells you whether the AI's search *found* you, which is the weakest
+signal of the three since being found doesn't guarantee being mentioned,
+let alone mentioned first.
 
 ---
 

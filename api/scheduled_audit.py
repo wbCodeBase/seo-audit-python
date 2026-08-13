@@ -44,7 +44,19 @@ Keywords tab — row 1 is a header, data starts row 2:
 
 Results tab (one per platform) — header written automatically on first run:
   Date | Time (IST) | Project | Keyword | Intent | Entity Type |
-  Entity Domain | Rank | Score | Cited In Answer | #1 Result | Grounded | Error
+  Entity Domain | Rank | Score | Cited In Answer | #1 Result | Grounded |
+  Error | Answer Position
+
+Rank vs. Answer Position — these measure two different things and can
+legitimately disagree:
+  - Rank: position in the underlying web search results the AI's tool call
+    actually returned (its raw "SERP"). Reflects findability.
+  - Answer Position: the order this entity was first mentioned/cited in the
+    AI's own WRITTEN answer (e.g. a numbered "here's my shortlist" reply).
+    Reflects how the AI chose to present/recommend it, which is a separate,
+    more editorial step the model does after searching — a domain can rank
+    highly in raw search yet get discussed later in the prose, or vice
+    versa. Blank means never cited in the answer at all.
 """
 import base64, json, os, re
 from datetime import datetime, timezone, timedelta
@@ -71,7 +83,7 @@ WEB_SEARCH_MAX_USES  = 5  # Claude: cap searches per query; billed at $10/1,000 
 RESULTS_HEADER = [
     "Date", "Time (IST)", "Project", "Keyword", "Intent",
     "Entity Type", "Entity Domain", "Rank", "Score",
-    "Cited In Answer", "#1 Result", "Grounded", "Error",
+    "Cited In Answer", "#1 Result", "Grounded", "Error", "Answer Position",
 ]
 
 RANKING_PROMPT = """\
@@ -90,29 +102,31 @@ def _domain_from_url(url):
     return re.sub(r'^www\.', '', netloc)
 
 
-def _find_rank(rankings, domain):
-    if not domain or not rankings:
+def _find_entity(rankings, domain=None, brand=None):
+    """Fuzzy-matches a domain (or brand name) against the rankings list and
+    returns the matched item's full dict — rank, cited, answer_position,
+    title, url — or None if it never showed up at all, neither in the raw
+    search results nor in the AI's written answer. Returning the whole item
+    (rather than just a rank number) is what lets callers read Answer
+    Position and Cited independently of Rank."""
+    if not rankings:
         return None
-    clean = re.sub(r'^https?://', '', domain, flags=re.I)
-    clean = re.sub(r'^www\.', '', clean, flags=re.I).rstrip('/').lower()
-    brand = clean.split('.')[0] if '.' in clean else clean
-    for item in rankings:
-        d = item.get("domain", "").lower()
-        t = item.get("title", "").lower()
-        if clean in d or d in clean or (brand and (brand in d or brand in t)):
-            return item["rank"]
-    return None
-
-
-def _find_rank_by_brand(rankings, brand):
-    if not brand or not rankings:
-        return None
-    needle = brand.strip().lower()
-    for item in rankings:
-        d = item.get("domain", "").lower()
-        t = item.get("title", "").lower()
-        if needle in t or needle in d:
-            return item["rank"]
+    if domain:
+        clean = re.sub(r'^https?://', '', domain, flags=re.I)
+        clean = re.sub(r'^www\.', '', clean, flags=re.I).rstrip('/').lower()
+        needle_brand = clean.split('.')[0] if '.' in clean else clean
+        for item in rankings:
+            d = item.get("domain", "").lower()
+            t = item.get("title", "").lower()
+            if clean in d or d in clean or (needle_brand and (needle_brand in d or needle_brand in t)):
+                return item
+    if brand:
+        needle = brand.strip().lower()
+        for item in rankings:
+            d = item.get("domain", "").lower()
+            t = item.get("title", "").lower()
+            if needle in t or needle in d:
+                return item
     return None
 
 
@@ -154,25 +168,20 @@ def _visibility_score(rank, grounded, cited):
     return score
 
 
-def _cited_for_rank(rankings, rank):
-    if not rank:
-        return False
-    for item in rankings or []:
-        if item.get("rank") == rank:
-            return bool(item.get("cited"))
-    return False
-
-
 # ── Claude platform ──────────────────────────────────────────────────────────
 
 def _extract_rankings_claude(content_blocks):
     """Ranks from the actual web_search_tool_result data Claude's backend
     returned (the real search results), not just from inline citations —
-    see ai_rank_run.py's _extract_rankings for the full rationale. Keeps a
-    'cited' flag per item for whichever of those were also inline-cited."""
+    see ai_rank_run.py's _extract_rankings for the full rationale. Also
+    tracks the order domains are first cited in the answer text itself
+    (answer_position) — a separate signal from search-result Rank, since
+    the model's written answer can reorder/prioritize differently than the
+    raw search results it started from."""
     seen = {}
     order = []
     cited_domains = set()
+    cited_order = []
     searched = False
 
     for block in content_blocks:
@@ -208,7 +217,9 @@ def _extract_rankings_claude(content_blocks):
                 domain = _domain_from_url(url) if url else ""
                 if not domain:
                     continue
-                cited_domains.add(domain)
+                if domain not in cited_domains:
+                    cited_domains.add(domain)
+                    cited_order.append(domain)
                 if domain not in seen:
                     seen[domain] = {
                         "domain": domain,
@@ -217,11 +228,14 @@ def _extract_rankings_claude(content_blocks):
                     }
                     order.append(domain)
 
+    answer_pos = {d: i + 1 for i, d in enumerate(cited_order)}
+
     rankings = []
     for i, domain in enumerate(order):
         item = seen[domain]
-        item["rank"]  = i + 1
-        item["cited"] = domain in cited_domains
+        item["rank"]            = i + 1
+        item["cited"]           = domain in cited_domains
+        item["answer_position"] = answer_pos.get(domain)
         rankings.append(item)
 
     return rankings, searched
@@ -268,10 +282,14 @@ def _extract_rankings_openai(output_items):
     action.sources[] (the actual search results OpenAI's backend returned —
     URL only, no title, so the domain is used as the title); inline
     citations come from url_citation annotations on output_text content,
-    which set the 'cited' flag."""
+    sorted by start_index to guarantee true reading order, which set the
+    'cited' flag and answer_position (first-mention order in the written
+    answer — a separate signal from search-result Rank; see module
+    docstring)."""
     seen = {}
     order = []
     cited_domains = set()
+    cited_order = []
     searched = False
 
     for item in output_items:
@@ -295,14 +313,19 @@ def _extract_rankings_openai(output_items):
             for content in (getattr(item, "content", None) or []):
                 if getattr(content, "type", None) != "output_text":
                     continue
-                for ann in (getattr(content, "annotations", None) or []):
-                    if getattr(ann, "type", None) != "url_citation":
-                        continue
+                annotations = [
+                    a for a in (getattr(content, "annotations", None) or [])
+                    if getattr(a, "type", None) == "url_citation"
+                ]
+                annotations.sort(key=lambda a: getattr(a, "start_index", 0) or 0)
+                for ann in annotations:
                     url = getattr(ann, "url", None)
                     domain = _domain_from_url(url) if url else ""
                     if not domain:
                         continue
-                    cited_domains.add(domain)
+                    if domain not in cited_domains:
+                        cited_domains.add(domain)
+                        cited_order.append(domain)
                     if domain not in seen:
                         seen[domain] = {
                             "domain": domain,
@@ -311,11 +334,14 @@ def _extract_rankings_openai(output_items):
                         }
                         order.append(domain)
 
+    answer_pos = {d: i + 1 for i, d in enumerate(cited_order)}
+
     rankings = []
     for i, domain in enumerate(order):
         item = seen[domain]
-        item["rank"]  = i + 1
-        item["cited"] = domain in cited_domains
+        item["rank"]            = i + 1
+        item["cited"]           = domain in cited_domains
+        item["answer_position"] = answer_pos.get(domain)
         rankings.append(item)
 
     return rankings, searched
@@ -432,7 +458,12 @@ def _read_keywords(svc, sheet_id, known_platforms):
 def _ensure_results_header(svc, sheet_id, tab):
     """Values.get/update can't create a missing tab — that needs a separate
     batchUpdate addSheet request. Create the tab first if it doesn't exist
-    yet, then make sure it has a header row."""
+    yet. Then (re)write the header row to the current RESULTS_HEADER
+    unconditionally — safe even if data rows already exist below, since
+    update() only touches row 1, and this makes the tab self-heal onto a
+    new column that gets added to the schema later (like Answer Position
+    here) instead of being stuck with whatever header was written the very
+    first time the tab was created."""
     meta   = svc.spreadsheets().get(spreadsheetId=sheet_id, fields="sheets.properties.title").execute()
     titles = [s["properties"]["title"] for s in meta.get("sheets", [])]
 
@@ -441,20 +472,11 @@ def _ensure_results_header(svc, sheet_id, tab):
             spreadsheetId=sheet_id,
             body={"requests": [{"addSheet": {"properties": {"title": tab}}}]},
         ).execute()
-        svc.spreadsheets().values().update(
-            spreadsheetId=sheet_id, range=_qrange(tab, "A1"),
-            valueInputOption="RAW", body={"values": [RESULTS_HEADER]},
-        ).execute()
-        return
 
-    resp = svc.spreadsheets().values().get(
-        spreadsheetId=sheet_id, range=_qrange(tab, "A1:M1")
+    svc.spreadsheets().values().update(
+        spreadsheetId=sheet_id, range=_qrange(tab, "A1"),
+        valueInputOption="RAW", body={"values": [RESULTS_HEADER]},
     ).execute()
-    if not resp.get("values"):
-        svc.spreadsheets().values().update(
-            spreadsheetId=sheet_id, range=_qrange(tab, "A1"),
-            valueInputOption="RAW", body={"values": [RESULTS_HEADER]},
-        ).execute()
 
 
 def _next_empty_row(svc, sheet_id, tab):
@@ -495,11 +517,13 @@ def _append_results(svc, sheet_id, tab, rows):
 # ── Audit ────────────────────────────────────────────────────────────────────
 
 def _entity_row(date_s, time_s, project, keyword, intent, entity_type,
-                 entity_domain, rank, score, cited, top1, grounded, error=""):
+                 entity_domain, rank, score, cited, top1, grounded,
+                 error="", answer_position=None):
     return [
         date_s, time_s, project, keyword, intent, entity_type, entity_domain,
         rank if rank is not None else "", score if score is not None else "",
         "yes" if cited else "no", top1 or "", "yes" if grounded else "no", error,
+        answer_position if answer_position is not None else "",
     ]
 
 
@@ -564,30 +588,36 @@ def _run_scheduled_audit():
             grounded = result.get("grounded", False)
             top1     = rankings[0]["domain"] if rankings else ""
 
-            dom_rank  = _find_rank(rankings, row["domain"])
-            dom_score = _visibility_score(dom_rank, grounded, _cited_for_rank(rankings, dom_rank))
+            dom_item  = _find_entity(rankings, domain=row["domain"])
+            dom_rank  = dom_item["rank"] if dom_item else None
+            dom_cited = bool(dom_item and dom_item.get("cited"))
+            dom_score = _visibility_score(dom_rank, grounded, dom_cited)
             out_rows[platform_key].append(_entity_row(
                 date_s, time_s, row["project"], row["keyword"], intent, "own",
-                row["domain"], dom_rank, dom_score,
-                _cited_for_rank(rankings, dom_rank), top1, grounded,
+                row["domain"], dom_rank, dom_score, dom_cited, top1, grounded,
+                answer_position=dom_item.get("answer_position") if dom_item else None,
             ))
 
             if row["brand"]:
-                brand_rank  = _find_rank_by_brand(rankings, row["brand"])
-                brand_score = _visibility_score(brand_rank, grounded, _cited_for_rank(rankings, brand_rank))
+                brand_item  = _find_entity(rankings, brand=row["brand"])
+                brand_rank  = brand_item["rank"] if brand_item else None
+                brand_cited = bool(brand_item and brand_item.get("cited"))
+                brand_score = _visibility_score(brand_rank, grounded, brand_cited)
                 out_rows[platform_key].append(_entity_row(
                     date_s, time_s, row["project"], row["keyword"], intent, "own brand",
-                    row["brand"], brand_rank, brand_score,
-                    _cited_for_rank(rankings, brand_rank), top1, grounded,
+                    row["brand"], brand_rank, brand_score, brand_cited, top1, grounded,
+                    answer_position=brand_item.get("answer_position") if brand_item else None,
                 ))
 
             for comp in row["competitors"]:
-                comp_rank  = _find_rank(rankings, comp)
-                comp_score = _visibility_score(comp_rank, grounded, _cited_for_rank(rankings, comp_rank))
+                comp_item  = _find_entity(rankings, domain=comp)
+                comp_rank  = comp_item["rank"] if comp_item else None
+                comp_cited = bool(comp_item and comp_item.get("cited"))
+                comp_score = _visibility_score(comp_rank, grounded, comp_cited)
                 out_rows[platform_key].append(_entity_row(
                     date_s, time_s, row["project"], row["keyword"], intent, "competitor",
-                    comp, comp_rank, comp_score,
-                    _cited_for_rank(rankings, comp_rank), top1, grounded,
+                    comp, comp_rank, comp_score, comp_cited, top1, grounded,
+                    answer_position=comp_item.get("answer_position") if comp_item else None,
                 ))
 
     rows_written = {}
