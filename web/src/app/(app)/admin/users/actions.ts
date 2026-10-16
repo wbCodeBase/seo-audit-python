@@ -4,17 +4,21 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { friendlyError, type ActionResult } from "@/lib/action-result";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const PATH = "/admin/users";
+const MIN_PASSWORD = 8;
 
 /**
- * Give an email access. If they've already signed in once, it applies now;
- * otherwise it's stored as an invitation and applied on their first sign-in
- * (database trigger). Mirrors geo/admin.py invite().
+ * Create an account (email + password, no emails sent) and/or give access.
+ * If the email already has an account, only the access is applied.
+ * Access changes go through the admin's own session, so RLS still applies;
+ * the secret key is used only for the Supabase Auth admin call.
  */
-export async function inviteUser(_: ActionResult, formData: FormData): Promise<ActionResult> {
-  const me = await requireAdmin();
+export async function createOrGrantUser(_: ActionResult, formData: FormData): Promise<ActionResult> {
+  await requireAdmin();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
   const access = String(formData.get("access") ?? "");          // "admin" or a client id
   const memberRole = formData.get("member_role") === "editor" ? "editor" : "viewer";
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "Enter a valid email address." };
@@ -22,31 +26,71 @@ export async function inviteUser(_: ActionResult, formData: FormData): Promise<A
   if (access !== "admin" && !clientId) return { error: "Choose admin or a client." };
 
   const supabase = await createClient();
-  const { data: profile } = await supabase.from("profiles").select("id").eq("email", email).maybeSingle();
-  const now = new Date().toISOString();
+  let { data: profile } = await supabase.from("profiles").select("id").eq("email", email).maybeSingle();
+  let created = false;
 
-  if (profile) {
-    const { error } = clientId
-      ? await supabase.from("client_members").upsert(
-          { user_id: profile.id, client_id: clientId, role: memberRole, created_at: now },
-          { onConflict: "user_id,client_id" })
-      : await supabase.from("profiles").update({ role: "admin" }).eq("id", profile.id);
-    if (error) return { error: friendlyError(error) };
-    revalidatePath(PATH);
-    return { ok: `${email} already had an account — access granted now.` };
+  if (!profile) {
+    if (password.length < MIN_PASSWORD) {
+      return { error: `New account: set a password of at least ${MIN_PASSWORD} characters (or click Suggest).` };
+    }
+    let admin;
+    try {
+      admin = createAdminClient();
+    } catch (e) {
+      return { error: (e as Error).message };
+    }
+    const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+    if (error || !data.user) {
+      return { error: /already|exists|registered/i.test(error?.message ?? "")
+        ? "An account with this email already exists."
+        : `Couldn't create the account: ${error?.message ?? "unknown error"}` };
+    }
+    created = true;
+    // The sign-up trigger has just created the profile row.
+    profile = { id: data.user.id };
   }
 
-  let existing = supabase.from("invitations").select("id").eq("email", email);
-  existing = clientId ? existing.eq("client_id", clientId) : existing.is("client_id", null);
-  const { data: found } = await existing.maybeSingle();
-  const row = { email, role: clientId ? "client" : "admin", client_id: clientId,
-                member_role: clientId ? memberRole : null, invited_by: me.id };
-  const { error } = found
-    ? await supabase.from("invitations").update(row).eq("id", found.id)
-    : await supabase.from("invitations").insert({ ...row, created_at: now });
+  const now = new Date().toISOString();
+  const { error } = clientId
+    ? await supabase.from("client_members").upsert(
+        { user_id: profile.id, client_id: clientId, role: memberRole, created_at: now },
+        { onConflict: "user_id,client_id" })
+    : await supabase.from("profiles").update({ role: "admin" }).eq("id", profile.id);
   if (error) return { error: friendlyError(error) };
+
   revalidatePath(PATH);
-  return { ok: `Invited ${email}. They get access the first time they sign in on the login page.` };
+  return {
+    ok: created
+      ? `Account created for ${email}. Send them the sign-in page, their email and the password you set — no email is sent automatically.`
+      : `${email} already had an account — access updated.`,
+  };
+}
+
+export async function resetPassword(userId: string, _: ActionResult, formData: FormData): Promise<ActionResult> {
+  await requireAdmin();
+  const password = String(formData.get("password") ?? "");
+  if (password.length < MIN_PASSWORD) return { error: `At least ${MIN_PASSWORD} characters.` };
+  try {
+    const { error } = await createAdminClient().auth.admin.updateUserById(userId, { password });
+    if (error) return { error: error.message };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+  return { ok: "Password changed. Share the new one with them." };
+}
+
+export async function deleteUser(userId: string): Promise<ActionResult> {
+  const me = await requireAdmin();
+  if (userId === me.id) return { error: "You can't delete your own account." };
+  try {
+    // Removes the login; their profile and client access are removed with it.
+    const { error } = await createAdminClient().auth.admin.deleteUser(userId);
+    if (error) return { error: error.message };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+  revalidatePath(PATH);
+  return { ok: "Deleted." };
 }
 
 export async function setUserRole(userId: string, role: "admin" | "client"): Promise<ActionResult> {
@@ -66,6 +110,20 @@ export async function setMemberRole(userId: string, clientId: number, role: "vie
   if (error) return { error: friendlyError(error) };
   revalidatePath(PATH);
   return { ok: "Saved." };
+}
+
+export async function addMembership(userId: string, _: ActionResult, formData: FormData): Promise<ActionResult> {
+  await requireAdmin();
+  const clientId = Number(formData.get("client_id"));
+  const role = formData.get("member_role") === "editor" ? "editor" : "viewer";
+  if (!clientId) return { error: "Choose a client." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("client_members").upsert(
+    { user_id: userId, client_id: clientId, role, created_at: new Date().toISOString() },
+    { onConflict: "user_id,client_id" });
+  if (error) return { error: friendlyError(error) };
+  revalidatePath(PATH);
+  return { ok: "Access added." };
 }
 
 export async function removeMember(userId: string, clientId: number): Promise<ActionResult> {

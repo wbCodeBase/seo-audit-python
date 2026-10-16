@@ -19,7 +19,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 <Link href="/admin/users" className="text-ink-2 hover:text-ink">Users</Link>
               </>
             )}
-            <span className="hidden text-muted sm:inline" title={viewer.role}>{viewer.email}</span>
+            <Link href="/account" className="hidden text-muted hover:text-ink sm:inline" title="Account and password">
+              {viewer.email}
+            </Link>
             <form action="/auth/signout" method="post">
               <button className="btn">Sign out</button>
             </form>

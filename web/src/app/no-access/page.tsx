@@ -11,7 +11,7 @@ export default async function NoAccess() {
         <h1 className="text-lg font-semibold">You&apos;re signed in, but have no access yet</h1>
         <p className="mt-2 text-sm text-ink-2">
           {viewer.email ? <>The account <span className="font-medium text-ink">{viewer.email}</span> </> : "Your account "}
-          isn&apos;t linked to any brand yet. Ask your account manager to give you access, then sign in again.
+          isn&apos;t linked to any brand yet. Ask your account manager to give you access, then reload this page.
         </p>
         <form action="/auth/signout" method="post" className="mt-6">
           <button className="btn">Sign out</button>
