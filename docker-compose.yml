@@ -1,0 +1,47 @@
+# Local development stack: app + Postgres + Redis.
+# Production data lives in Supabase; this stack never touches it — the app
+# container's DATABASE_URL points at the local "db" service below.
+#
+#   docker compose up -d db redis          # start Postgres + Redis
+#   docker compose run --rm app            # create/upgrade tables (alembic upgrade head)
+#   docker compose run --rm app pytest -q  # run tests
+#   docker compose run --rm app python -m geo run   # one real audit run (uses API credits)
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: geo
+      POSTGRES_PASSWORD: geo
+      POSTGRES_DB: geo
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U geo -d geo"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Not used yet — the job queue (Celery workers) arrives in Phase 4.
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  app:
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://geo:geo@db:5432/geo
+      DATABASE_URL_DIRECT: postgresql://geo:geo@db:5432/geo
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

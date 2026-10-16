@@ -47,7 +47,7 @@ picks up new/edited rows automatically.
 | **Brand** | The brand/company name as it'd appear in text, e.g. `SaasWorx` | Optional, but recommended — some mentions cite the brand name without linking the domain |
 | **Competitors** | Comma-separated competitor domains to compare against for this exact keyword, e.g. `inoday.com, linkederp.com` | Optional |
 | **Keyword** | The exact query to audit, e.g. `netsuite implementation partners in Noida` | **Required** |
-| **Active** | `TRUE` to include this row in daily runs, `FALSE` to pause it without deleting it. Blank counts as `TRUE`. | Optional |
+| **Active** | Blank, `TRUE`, `Yes`, `Y`, `1` or `On` = include this row in daily runs. Anything else (`FALSE`, `No`, `0`, `Off`, `Paused`…) pauses it without deleting it. | Optional |
 | **Platforms** | Which AI platform(s) to check for this row: `claude`, `chatgpt`, or both comma-separated. Blank = every platform currently enabled. | Optional |
 
 **Example row:**
@@ -63,6 +63,25 @@ picks up new/edited rows automatically.
 - **Pause a keyword temporarily** → set Active to `FALSE`. Flip it back to `TRUE` (or blank) whenever.
 - **Add a competitor you forgot** → edit the Competitors cell for that row, comma-separated. Takes effect on the next run — you don't need to re-add the keyword.
 - **Only check one platform for a specific keyword** (e.g. save cost, or you only care about ChatGPT for this one) → put `chatgpt` in that row's Platforms cell.
+
+### Buyer questions — the Questions tab (optional)
+
+Keywords are short ("netsuite partners noida"). Real buyers ask AI full
+questions ("Who are the most reliable NetSuite partners for a mid-size
+manufacturer in India?"). Add those to a tab named exactly **Questions**:
+
+| Column | Meaning |
+|---|---|
+| **Project** | Must match a Project in the Keywords tab — the question uses that client's Domain, Brand and Competitors |
+| **Question** | The full question, written the way a buyer would ask it |
+| **Topic** | Your grouping, e.g. `NetSuite`, `ERP migration` — the dashboard can filter by it |
+| **Funnel Stage** | `TOFU`, `MOFU` or `BOFU` (or `awareness` / `consideration` / `decision`) |
+| **Tags** | Comma-separated free labels |
+| **Active** | Same rules as the Keywords tab |
+| **Platforms** | Same rules as the Keywords tab |
+
+A question whose Project isn't in the Keywords tab is skipped, and the run
+result lists it under `skipped` so it's easy to spot.
 
 ---
 
@@ -89,10 +108,13 @@ year of daily runs at that volume (140 × 365 ≈ 51,000 rows) is nowhere
 close to a real limit. The only practical ceiling is Vercel's function time
 budget — see [§7](#7-when-things-are-slow-or-time-out).
 
-Every keyword only costs **one AI call per platform**, no matter how many
+Every keyword only costs **one AI call per platform** (plus one very cheap
+call that spots new competitor names in the answer), no matter how many
 competitors you attach to it — competitors are found for free by checking
 the same search results your domain was checked against. Adding a 6th
 competitor to a keyword costs nothing extra; adding an 11th keyword does.
+If engineering sets repeats above 1, multiply the rows and the cost by
+that number.
 
 ---
 
@@ -133,6 +155,26 @@ append-only log, so you always have the full history to look back on.
 | **Grounded** | `yes` if the AI actually performed a live web search for this query at all. `no` means it answered from memory without searching — in that case Rank/Score are meaningless and will be blank, because there was no live search to rank against. |
 | **Error** | Only filled in if that specific keyword failed to run (rate limit, API issue, etc.) — everything else on that row will be blank when this is filled in |
 | **Answer Position** | **The order this entity was first mentioned in the AI's own written answer** — 1 means it was the first thing the AI talked about/recommended. This is different from Rank on purpose: Rank is the AI's *raw search results*, Answer Position is what the AI *chose to lead with* after reading them, which is a separate editorial step the model does. Blank means it was never mentioned in the written answer at all, even if it did show up in Rank. |
+
+**Columns added in the database upgrade** (to the right of Answer Position —
+every older column stays where it was):
+
+| Column | What it means |
+|---|---|
+| **Run ID** | Same for every row written by one run |
+| **Answer ID** | Same for every row that came from one AI answer — the full answer text and its cited links are stored in the database under this ID |
+| **AI App** | `claude` or `chatgpt` |
+| **Model** | The exact model that answered |
+| **Prompt Type** | `keyword` (Keywords tab) or `question` (Questions tab) |
+| **Repeat #** | 1, 2, … when a question is asked more than once per run (answers vary, so repeats give a fairer average) |
+| **Mentioned In Answer** | `yes` if the AI **named** this brand/domain anywhere in its written answer, link or no link. This is what the dashboard's *mention rate* and *share of voice* count |
+| **Mention Position** | Order this entity was first named, among your own brand and the competitors you track. 1 = named first. Your domain and brand share one slot |
+
+**New competitors.** The AI often recommends companies you aren't tracking
+yet. Those are saved to the database as *pending* candidates, and you'll be
+able to mark each one as a `direct` or `indirect` competitor, `self`, or
+`ignored` from the dashboard. Approved ones are then tracked automatically on
+every run, just like the Competitors column.
 
 **Rank vs. Answer Position — these can legitimately disagree, and that's
 not a bug.** If you manually ask Claude or ChatGPT the same question in
@@ -205,5 +247,5 @@ reasons, not something to panic over from one bad day.
 A: Yes — put `claude` in that row's Platforms column.
 
 **Q: We want to stop tracking a keyword but keep the history.**
-A: Set Active to `FALSE`. The row stays, past results stay, it just won't
+A: Set Active to `FALSE` (or `No`). The row stays, past results stay, it just won't
 run again until you flip it back.

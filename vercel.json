@@ -1,7 +1,7 @@
 {
   "version": 2,
   "builds": [
-    { "src": "api/*.py", "use": "@vercel/python" },
+    { "src": "api/*.py", "use": "@vercel/python", "config": { "excludeFiles": "{.git/**,.venv/**,.vercel/**,web/**,tests/**,scripts/**,alembic/**,node_modules/**,**/__pycache__/**,.env,.env.*,Dockerfile,docker-compose.yml,.dockerignore,alembic.ini,requirements-dev.txt,*.md,.gitignore,.pytest_cache/**}" } },
     { "src": "public/**", "use": "@vercel/static" }
   ],
   "routes": [
@@ -13,9 +13,11 @@
     { "src": "/api/ai_rank_run",  "dest": "/api/ai_rank_run.py" },
     { "src": "/api/ai_rank_poll", "dest": "/api/ai_rank_poll.py" },
     { "src": "/api/scheduled_audit", "dest": "/api/scheduled_audit.py" },
+    { "src": "/api/compute_metrics", "dest": "/api/compute_metrics.py" },
     { "src": "/(.*)", "dest": "/public/$1" }
   ],
   "crons": [
-    { "path": "/api/scheduled_audit", "schedule": "30 15 * * *" }
+    { "path": "/api/scheduled_audit", "schedule": "30 15 * * *" },
+    { "path": "/api/compute_metrics", "schedule": "30 16 * * *" }
   ]
 }

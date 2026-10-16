@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+/*
+ * Neutral theme. Every colour is a role token so light/dark swap in one
+ * place. Chart series and status colours come from the validated data-viz
+ * palette (series 1–3 pass the colour-vision checks in both modes); status
+ * colours are only ever used for good/bad meaning, always with an icon/label.
+ */
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-2: #f3f2ee;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #6f6d68;
+  --line: #e1e0d9;
+  --axis: #c3c2b7;
+  --ring: rgba(11, 11, 11, 0.1);
+  --accent: #2a78d6;
+  --accent-ink: #ffffff;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-muted: #b9b7ae;
+  --good: #0ca30c;
+  --good-ink: #006300;
+  --good-wash: #e3f4e3;
+  --critical: #d03b3b;
+  --critical-ink: #b42323;
+  --critical-wash: #fbe7e7;
+  --warn-wash: #fdf3dc;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #232321;
+    --ink: #f0efec;
+    --ink-2: #c3c2b7;
+    --muted: #9b9991;
+    --line: #2c2c2a;
+    --axis: #383835;
+    --ring: rgba(255, 255, 255, 0.1);
+    --accent: #3987e5;
+    --accent-ink: #ffffff;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-muted: #55544f;
+    --good: #0ca30c;
+    --good-ink: #3fc23f;
+    --good-wash: #12301a;
+    --critical: #d03b3b;
+    --critical-ink: #f07d7d;
+    --critical-wash: #3a1717;
+    --warn-wash: #3a2e10;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #232321;
+  --ink: #f0efec;
+  --ink-2: #c3c2b7;
+  --muted: #9b9991;
+  --line: #2c2c2a;
+  --axis: #383835;
+  --ring: rgba(255, 255, 255, 0.1);
+  --accent: #3987e5;
+  --accent-ink: #ffffff;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-muted: #55544f;
+  --good: #0ca30c;
+  --good-ink: #3fc23f;
+  --good-wash: #12301a;
+  --critical: #d03b3b;
+  --critical-ink: #f07d7d;
+  --critical-wash: #3a1717;
+  --warn-wash: #3a2e10;
+}
+
+@theme inline {
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-good: var(--good);
+  --color-good-ink: var(--good-ink);
+  --color-good-wash: var(--good-wash);
+  --color-critical: var(--critical);
+  --color-critical-ink: var(--critical-ink);
+  --color-critical-wash: var(--critical-wash);
+  --color-warn-wash: var(--warn-wash);
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+/* Small shared primitives (kept as classes so pages stay readable). */
+@layer components {
+  .card {
+    @apply rounded-xl border border-line bg-surface;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-2 disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-50;
+  }
+  .input {
+    @apply w-full rounded-lg border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none;
+  }
+  .label {
+    @apply mb-1 block text-xs font-medium text-ink-2;
+  }
+  .chip {
+    @apply inline-flex items-center rounded-full border border-line px-2 py-0.5 text-xs text-ink-2;
+  }
+  .th {
+    @apply px-3 py-2 text-left text-xs font-medium text-muted;
+  }
+  .td {
+    @apply border-t border-line px-3 py-2 align-top text-sm;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

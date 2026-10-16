@@ -1,0 +1,4 @@
+-r requirements.txt
+# Migrations run locally / in Docker, never inside the Vercel functions.
+alembic>=1.13.0
+pytest>=8.0

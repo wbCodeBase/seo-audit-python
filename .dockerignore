@@ -1,0 +1,11 @@
+.git
+.venv
+.env
+.env.*
+!.env.example
+.vercel
+__pycache__
+*.pyc
+.pytest_cache
+node_modules
+public
