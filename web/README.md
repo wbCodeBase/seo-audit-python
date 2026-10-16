@@ -43,26 +43,37 @@ npm run dev                    # http://localhost:3000
 
 Checks: `npx tsc --noEmit`, `npm run lint`, `npm run build`.
 
-## Supabase Auth settings (do once)
+## Supabase sign-in settings (do once, ~5 minutes)
 
-Supabase dashboard → **Authentication**:
+Replace `YOUR-APP` below with your web app's address on Vercel
+(e.g. `seo-audit-web.vercel.app`, or your own domain later).
 
-1. **URL Configuration**
-   - *Site URL*: your deployed app URL, e.g. `https://app.yourdomain.com`
-   - *Redirect URLs*: add `https://app.yourdomain.com/auth/callback`,
-     `https://*-yourteam.vercel.app/auth/callback` (previews) and
-     `http://localhost:3000/auth/callback`.
-2. **Email Templates → Magic Link** — so links also work when opened on a
-   different device/browser than the one that requested them, use:
-   ```html
-   <h2>Sign in to AI Visibility</h2>
-   <p><a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email">Sign in</a></p>
-   ```
-3. **SMTP Settings** — Supabase's built-in email sender is heavily rate-limited
-   and meant for testing. Before inviting clients, add your own SMTP (e.g.
-   Resend, Postmark, SES, or your mail provider).
-4. **Providers → Email**: keep enabled. Anyone can request a sign-in link, but
-   a new account has **no access** until an admin grants it (or it was invited).
+**1. Tell Supabase where the website is** — otherwise sign-in emails point to
+`localhost`.
+Supabase → **Authentication** → **URL Configuration**
+- *Site URL*: `https://YOUR-APP`
+- *Redirect URLs* → **Add URL**, add both:
+  - `https://YOUR-APP/auth/callback`
+  - `http://localhost:3000/auth/callback`
+
+**2. Make the sign-in email link work on any device** — by default it only
+works in the same browser where you typed your email.
+Supabase → **Authentication** → **Emails** → **Magic Link** → replace the
+message body with:
+```html
+<h2>Sign in to AI Visibility</h2>
+<p><a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email">Sign in</a></p>
+```
+→ **Save**.
+
+**3. (Before inviting clients) your own email sender** — Supabase's built-in
+sender only sends a few emails per hour; fine for testing yourself. Later:
+Supabase → **Authentication** → **Emails** → **SMTP Settings**, and connect a
+service such as Resend, Postmark or your company mail.
+
+Then open `https://YOUR-APP`, type your email, click **Email me a sign-in
+link**, and click the link in the email. Invited emails get their access
+automatically on first sign-in.
 
 ## Giving people access
 
@@ -75,7 +86,7 @@ Supabase dashboard → **Authentication**:
 
 Create a **second Vercel project** from the same Git repo:
 
-- *Root Directory*: `web` (framework auto-detected as Next.js)
+- *Root Directory*: `web` (`web/vercel.json` pins the framework to Next.js)
 - *Environment variables*: `NEXT_PUBLIC_SUPABASE_URL`,
   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - Add your domain, then put it in the Supabase *Site URL* / *Redirect URLs* above.
