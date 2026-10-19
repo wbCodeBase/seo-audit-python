@@ -26,6 +26,18 @@ class ProviderResult:
     error: str = ""
 
 
+_BILLING_HINTS = ("insufficient_quota", "credit_balance", "credit balance", "no credits", "billing")
+
+
+def _is_billing_error(exc):
+    """OpenAI uses HTTP 429 both for 'too many requests' and 'out of credit';
+    Anthropic returns 400 'credit balance is too low'. Tell them apart so the
+    user is sent to billing, not told to retry."""
+    body = getattr(exc, "body", None)
+    text = " ".join(str(x) for x in (getattr(exc, "code", ""), body, exc)).lower()
+    return any(h in text for h in _BILLING_HINTS)
+
+
 def _usage_dict(usage, *names):
     if usage is None:
         return {}
@@ -69,6 +81,10 @@ def ask_claude(prompt, api_key, models):
             return ProviderResult(error="Invalid ANTHROPIC_API_KEY — check your environment variables.", model=model)
         except anthropic.RateLimitError:
             return ProviderResult(error="Rate limit reached — try again in a few seconds.", model=model)
+        except anthropic.BadRequestError as e:
+            if _is_billing_error(e):
+                return ProviderResult(error="Anthropic account has no credit left — add credit at console.anthropic.com → Billing.", model=model)
+            return ProviderResult(error=f"{type(e).__name__}: {e}", model=model)
         except anthropic.APITimeoutError:
             return ProviderResult(error="Claude API timed out — try again.", model=model)
         except Exception as e:
@@ -101,7 +117,9 @@ def ask_openai(prompt, api_key, models):
             continue
         except openai.AuthenticationError:
             return ProviderResult(error="Invalid OPENAI_API_KEY — check your environment variables.", model=model)
-        except openai.RateLimitError:
+        except openai.RateLimitError as e:
+            if _is_billing_error(e):
+                return ProviderResult(error="OpenAI account has no credit left — add credit at platform.openai.com → Settings → Billing.", model=model)
             return ProviderResult(error="Rate limit reached — try again in a few seconds.", model=model)
         except openai.APITimeoutError:
             return ProviderResult(error="OpenAI API timed out — try again.", model=model)

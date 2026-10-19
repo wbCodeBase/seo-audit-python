@@ -23,7 +23,7 @@ def fakes(monkeypatch):
     monkeypatch.setattr(sheets_io, "append_results", lambda _svc, _sid, tab, rows: written.__setitem__(tab, rows))
     monkeypatch.setattr(audit, "available_providers", lambda _s: {
         "claude": {"tab": "Results - Claude", "ask": lambda _q: _result()}})
-    monkeypatch.setattr(discovery, "extract_brands_llm", lambda *_a: (
+    monkeypatch.setattr(discovery, "extract_brands_llm", lambda *_a, **_k: (
         [{"name": "LinkedERP", "domain": "linkederp.com"}], {"model": "haiku", "input_tokens": 5}))
     return written
 

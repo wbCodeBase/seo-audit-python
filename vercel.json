@@ -14,10 +14,10 @@
     { "src": "/api/ai_rank_poll", "dest": "/api/ai_rank_poll.py" },
     { "src": "/api/scheduled_audit", "dest": "/api/scheduled_audit.py" },
     { "src": "/api/compute_metrics", "dest": "/api/compute_metrics.py" },
+    { "src": "/api/manual_run", "dest": "/api/manual_run.py" },
     { "src": "/(.*)", "dest": "/public/$1" }
   ],
   "crons": [
-    { "path": "/api/scheduled_audit", "schedule": "30 15 * * *" },
     { "path": "/api/compute_metrics", "schedule": "30 16 * * *" }
   ]
 }

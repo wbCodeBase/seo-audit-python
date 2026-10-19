@@ -20,7 +20,7 @@ from sqlalchemy import select
 
 from geo import discovery, sheets_io
 from geo.config import get_settings
-from geo.matching import clean_domain, entity_aliases, find_entity, mention_positions
+from geo.matching import clean_domain, domain_stem, entity_aliases, find_entity, mention_positions
 from geo.models import Answer, Citation, Client, Competitor, Mention, Question, Run
 from geo.providers import available_providers
 from geo.scoring import classify_intent, visibility_score
@@ -212,7 +212,8 @@ def _ask(check, platform_key, provider, repeat, settings):
     brands, extraction_error = None, ""
     if settings.discovery_enabled and settings.anthropic_api_key and not result.error:
         brands, info = discovery.extract_brands_llm(
-            result.parsed.answer_text, check["text"], settings.anthropic_api_key, settings.discovery_model)
+            result.parsed.answer_text, check["text"], settings.anthropic_api_key, settings.discovery_model,
+            brand=check["brand"], domain=check["domain"])
         if brands is None:
             extraction_error = info
         elif info:
@@ -238,24 +239,29 @@ def run_checks(checks, providers, settings, contexts):
                 rec = {"check": ch, "platform": p, "repeat": r,
                        "result": ProviderResult(error=f"{type(e).__name__}: {e}"),
                        "brands": None, "extraction_error": ""}
-            ctx = contexts[ch["project"]]
-            rec["answer_id"] = str(uuid.uuid4())
-            rec["intent"] = classify_intent(ch["text"])
-            rec["entities"] = evaluate(ch, ctx, rec["result"])
-            parsed = rec["result"].parsed
-            rec["top1"] = parsed.rankings[0]["domain"] if parsed.rankings else ""
-            if rec["result"].error:
-                rec["candidates"] = []
-            else:
-                known = discovery.KnownEntities()
-                known.add(name=ch["brand"], domain=ch["domain"])
-                for a in ctx["self_aliases"]:
-                    known.add(name=a)
-                for c in ch["competitors"]:
-                    known.add(domain=c)
-                rec["candidates"] = discovery.discover(rec["brands"], parsed.citations, known)
-            records.append(rec)
+            records.append(finish_record(rec, contexts[ch["project"]]))
     return records
+
+
+def finish_record(rec, ctx):
+    """Score one asked check: entity rows, #1 result, new-competitor candidates."""
+    ch = rec["check"]
+    rec["answer_id"] = str(uuid.uuid4())
+    rec["intent"] = classify_intent(ch["text"])
+    rec["entities"] = evaluate(ch, ctx, rec["result"])
+    parsed = rec["result"].parsed
+    rec["top1"] = parsed.rankings[0]["domain"] if parsed.rankings else ""
+    if rec["result"].error:
+        rec["candidates"] = []
+    else:
+        known = discovery.KnownEntities()
+        known.add(name=ch["brand"], domain=ch["domain"])
+        for a in ctx["self_aliases"]:
+            known.add(name=a)
+        for c in ch["competitors"]:
+            known.add(domain=c)
+        rec["candidates"] = discovery.discover(rec["brands"], parsed.citations, known)
+    return rec
 
 
 # ── Persisting ──────────────────────────────────────────────────────────────
@@ -303,7 +309,7 @@ def persist(session, run_id, records, contexts, now):
                     client_id=client_id, position=c["position"], url=c["url"], domain=c["domain"], title=c["title"] or None))
 
         for cand in rec["candidates"]:
-            comp = competitor(client_id, cand["key"])
+            comp = competitor(client_id, cand["key"]) or _same_competitor(session, client_id, cand)
             if comp is None:
                 comp = Competitor(
                     client_id=client_id, key=cand["key"], name=cand["name"][:200],
@@ -317,6 +323,22 @@ def persist(session, run_id, records, contexts, now):
             comp.last_seen_at = now
         session.flush()
     return new_candidates
+
+
+def _same_competitor(session, client_id, cand):
+    """An existing competitor that is the same business under a different key
+    — e.g. first seen with its website ('sarctechnology.com'), later named
+    without one ('SARC Technology') — matched on normalised name or on the
+    domain's brand label."""
+    want = discovery._compact(cand["name"])
+    want_stem = domain_stem(cand["domain"]) if cand.get("domain") else ""
+    for c in session.scalars(select(Competitor).where(Competitor.client_id == client_id)):
+        names = {discovery._compact(c.name)}
+        if c.domain:
+            names.add(discovery._compact(domain_stem(c.domain)))
+        if (want and want in names) or (want_stem and len(want_stem) >= 4 and want_stem in names):
+            return c
+    return None
 
 
 # ── Sheet rows ──────────────────────────────────────────────────────────────

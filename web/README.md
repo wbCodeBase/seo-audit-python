@@ -18,7 +18,10 @@ src/
 │   ├── (app)/account/        change your own password
 │   ├── (app)/clients/        client list (+ add client, admins)
 │   ├── (app)/c/[clientId]/   Overview · Questions · Competitors · Answers
-│   └── (app)/admin/users/    create accounts, passwords, roles, client access (admins)
+│   ├── (app)/c/[clientId]/settings/  edit client, run history (admins)
+│   ├── (app)/admin/users/    create accounts, passwords, roles, client access (admins)
+│   ├── api/run/              "Run now" backend (admins) → Python job API
+│   └── api/cron/daily/       nightly audit (Vercel Cron, 21:00 IST) → Python job API
 └── components/dashboard/     stat tiles, trend chart, bars, questions × AI apps matrix
 ```
 
@@ -77,12 +80,33 @@ admin automatically; otherwise run `python -m geo make-admin EMAIL`.
   `python -m geo invite EMAIL "Client name" editor` — applied when an account
   with that email is created.
 
+## Running audits: "Run now" and the nightly cron
+
+Both use the Python engine's job API (`api/manual_run.py` in the repo root),
+one small step per call, so no single serverless call runs for long:
+`start` (list the client's question × AI app jobs) → `task` (ask ONE AI app
+ONE question and save it — safe to retry) → `finish` (close the run, write the
+sheet's Results tabs, rescore sentiment, rebuild metrics).
+
+- **Run now** — admins, on any client page. Asks 4 jobs at a time from the
+  browser with a progress bar; failed jobs can be retried on their own.
+- **Nightly** — `web/vercel.json` cron calls `/api/cron/daily` at 21:00 IST,
+  which runs every client with active questions (6 jobs at a time). Vercel
+  sends `Authorization: Bearer <CRON_SECRET>`; the route rejects anything else.
+
+The web project needs two more server-only variables for this:
+`GEO_API_URL` (the Python project's address) and `CRON_SECRET` (same value as
+on the Python project).
+
 ## Deploy (Vercel)
 
 Create a **second Vercel project** from the same Git repo:
 
 - *Root Directory*: `web` (`web/vercel.json` pins the framework to Next.js)
 - *Environment variables*: `NEXT_PUBLIC_SUPABASE_URL`,
-  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `GEO_API_URL`,
+  `CRON_SECRET`
 
-The existing Vercel project (repo root) keeps running the Python cron jobs.
+The existing Vercel project (repo root) runs the Python engine (job API +
+the 22:00 IST metrics safety-net cron); the nightly audit itself is scheduled
+from this web project.

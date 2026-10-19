@@ -20,7 +20,9 @@ This repo hosts three things:
 Google Sheet (Keywords + Questions tabs)        ← settings input
         │
         ▼
-api/scheduled_audit.py  (Vercel Cron, 21:00 IST)  →  geo/audit.py
+web /api/cron/daily (21:00 IST) or "Run now"  →  api/manual_run.py  →  geo/jobs.py → geo/audit.py
+   (one AI answer per call: start → task × N → finish)
+api/scheduled_audit.py  (single-call batch run; manual use only now)  →  geo/audit.py
         │
         ├─ geo/providers.py   ask Claude / ChatGPT (web search on)
         ├─ geo/parsing.py     rankings, full answer text, cited URLs
@@ -107,8 +109,12 @@ database is unreachable during a run, it falls back to the sheet and reports
 
 ### 4. Running an audit
 
-- **Scheduled:** Vercel Cron, daily 15:30 UTC (21:00 IST) — see `vercel.json`.
-- **On demand (deployed):** `https://<your-app>.vercel.app/api/scheduled_audit?secret=<CRON_SECRET>`
+- **Scheduled:** the **web** project's Vercel Cron, daily 15:30 UTC (21:00 IST)
+  — see `web/vercel.json`. It needs `GEO_API_URL` + `CRON_SECRET` set on the web
+  project. The Python project keeps only the 22:00 IST metrics cron.
+- **On demand:** the **Run now** button on a client page (admins).
+- **Old single-call run:** `https://<python-app>/api/scheduled_audit?secret=<CRON_SECRET>`
+  (can hit the serverless time limit once there are many questions).
 - **Locally:** `python -m geo run` (uses real API credits; prints the JSON result).
 - **Sheet settings only:** `python -m geo sync` copies the sheet's clients,
   questions and competitors into the database without asking any AI (no cost).

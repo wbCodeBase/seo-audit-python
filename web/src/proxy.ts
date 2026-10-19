@@ -9,7 +9,8 @@ import { NextResponse, type NextRequest } from "next/server";
  * This is only an optimistic gate — real authorization is enforced by RLS on
  * every query, and pages re-check the user server-side.
  */
-const PUBLIC_PATHS = ["/login"];
+// /api/cron authenticates with CRON_SECRET itself (Vercel Cron has no session).
+const PUBLIC_PATHS = ["/login", "/api/cron"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });

@@ -10,15 +10,15 @@ const SECTIONS = [
   { href: "/answers", label: "Answers" },
 ];
 
-export function SectionNav({ base }: { base: string }) {
+export function SectionNav({ base, admin = false }: { base: string; admin?: boolean }) {
   const pathname = usePathname();
   const search = useSearchParams();
   // Keep the date range when moving between sections.
   const range = search.get("range");
   const qs = range ? `?range=${range}` : "";
   return (
-    <nav aria-label="Sections" className="flex gap-1 rounded-lg border border-line bg-surface p-1 text-sm">
-      {SECTIONS.map((s) => {
+    <nav aria-label="Sections" className="flex flex-wrap gap-1 rounded-lg border border-line bg-surface p-1 text-sm">
+      {[...SECTIONS, ...(admin ? [{ href: "/settings", label: "Settings" }] : [])].map((s) => {
         const href = base + s.href;
         const active = s.href ? pathname.startsWith(href) : pathname === base;
         return (

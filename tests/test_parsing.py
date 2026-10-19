@@ -88,3 +88,17 @@ def test_parse_openai_sorts_annotations_by_reading_order():
 def test_parse_openai_no_search():
     p = parse_openai([NS(type="message", content=[NS(type="output_text", text="hi", annotations=[])])])
     assert p.grounded is False and p.rankings == [] and p.answer_text == "hi"
+
+
+def test_billing_errors_are_told_apart_from_rate_limits():
+    from geo.providers import _is_billing_error
+
+    class E(Exception):
+        def __init__(self, msg, code=None, body=None):
+            super().__init__(msg)
+            self.code, self.body = code, body
+
+    assert _is_billing_error(E("Error code: 429", body={"error": {"type": "insufficient_quota",
+                                                                   "code": "credit_balance_exhausted"}}))
+    assert _is_billing_error(E("Your credit balance is too low to access the Anthropic API."))
+    assert not _is_billing_error(E("Rate limit reached for requests per min", code="rate_limit_exceeded"))

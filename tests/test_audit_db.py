@@ -124,3 +124,19 @@ def test_sheet_competitor_promotes_pending(session):
     audit.sync_config(session, [_check(competitors=("https://www.linkederp.com",))], NOW)
     c = session.scalar(select(Competitor).where(Competitor.key == "linkederp.com"))
     assert c.relationship_ == "direct" and c.times_seen == 3
+
+
+def test_same_business_under_another_key_is_not_suggested_twice(session):
+    ctxs = audit.sync_config(session, [_check(competitors=())], NOW)
+    cid = ctxs["SaasWorx"]["client_id"]
+    session.add(Competitor(client_id=cid, key="sarctechnology.com", name="SARC Technology",
+                           domain="sarctechnology.com", relationship_="pending", source="discovered", times_seen=1))
+    session.flush()
+    session.add(Run(id="run-x", trigger="manual", started_at=NOW))
+    session.flush()
+    # same business named without its website, in two spellings (merged per answer)
+    rec = _record(_check(competitors=()), ctxs["SaasWorx"], _result(),
+                  [{"name": "SARC Technology", "domain": ""}, {"name": "Sarc Technology", "domain": ""}])
+    new = audit.persist(session, "run-x", [rec], ctxs, NOW)
+    rows = session.scalars(select(Competitor).where(Competitor.client_id == cid)).all()
+    assert new == 0 and len(rows) == 1 and rows[0].times_seen == 2

@@ -34,9 +34,11 @@ GENERIC_SOURCE_DOMAINS = frozenset({
 EXTRACT_PROMPT = """\
 Below is an AI assistant's answer to the question: "{question}"
 
-List every company, brand, product or service provider that the answer presents to the reader as an option, vendor, provider, tool or recommendation — in the order each is first named. Do NOT include publications, review sites, directories, forums or other sources that are only cited as evidence.
+We track the business {brand} ({domain}). List every business the answer presents as an alternative a buyer could choose INSTEAD of {brand} — i.e. companies offering the same kind of product or service — in the order each is first named.
 
-For each one give its name exactly as written and its website domain if the answer states or links it (otherwise an empty string).
+Do NOT include: software tools, ad or social media platforms, marketplaces, search engines, review sites, directories, publications, forums, or any source only cited as evidence — unless that company itself sells the same kind of service as {brand}. Do not include {brand} itself.
+
+For each one give its name exactly as written and its website domain if the answer states or links it (otherwise an empty string). Return an empty list if there are none.
 
 <answer>
 {answer}
@@ -68,9 +70,11 @@ def is_generic_source(domain):
     return any(d == g or d.endswith("." + g) for g in GENERIC_SOURCE_DOMAINS)
 
 
-def extract_brands_llm(answer_text, question, api_key, model):
+def extract_brands_llm(answer_text, question, api_key, model, brand="", domain=""):
     """Returns ([{name, domain}], usage_dict) or (None, error_str) when the
-    call fails, so callers can fall back to citation-based discovery."""
+    call fails, so callers can fall back to citation-based discovery.
+    brand/domain describe the client, so only real alternatives to it come
+    back (not the tools and platforms an answer happens to mention)."""
     if not answer_text or not answer_text.strip():
         return [], {}
     import anthropic
@@ -85,6 +89,7 @@ def extract_brands_llm(answer_text, question, api_key, model):
             },
             messages=[{"role": "user", "content": EXTRACT_PROMPT.format(
                 question=question, answer=answer_text[:60000],
+                brand=brand or domain or "the client", domain=domain or "no website given",
             )}],
         )
     except Exception as e:  # never let discovery cost us the answer itself

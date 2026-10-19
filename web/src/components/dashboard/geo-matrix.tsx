@@ -35,12 +35,12 @@ export function GeoMatrix({ cells, apps, clientId }: { cells: MatrixCell[]; apps
               {apps.map((a) => {
                 const c = byKey.get(`${qid}:${a}`);
                 if (!c) return <td key={a} className="td text-muted">—</td>;
-                const where = c.mention_position ? `#${c.mention_position} in answer` : c.rank ? `rank ${c.rank}` : "";
+                const where = c.mention_position ? `#${c.mention_position}` : c.rank ? `rank ${c.rank}` : "";
                 return (
                   <td key={a} className="td">
                     <Link
                       href={`/c/${clientId}/answers?answer=${c.answer_id}`}
-                      title={`Latest answer ${dateTime(c.answered_at)}${c.estimated ? " (imported history: named = cited)" : ""}`}
+                      title={`Latest answer ${dateTime(c.answered_at)}${c.mention_position ? ` · named #${c.mention_position} in the answer` : ""}${c.estimated ? " (imported history: named = cited)" : ""}`}
                       className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ${
                         c.named ? "bg-good-wash text-good-ink" : "bg-critical-wash text-critical-ink"
                       }`}

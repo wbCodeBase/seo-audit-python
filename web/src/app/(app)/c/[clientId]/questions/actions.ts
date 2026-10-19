@@ -76,3 +76,33 @@ export async function deleteQuestion(clientId: number, questionId: number): Prom
   revalidatePath(`/c/${clientId}/questions`);
   return { ok: "Deleted." };
 }
+
+export async function updateQuestion(clientId: number, questionId: number, _: ActionResult, formData: FormData): Promise<ActionResult> {
+  const denied = await guard(clientId);
+  if (denied) return { error: denied };
+  const text = String(formData.get("text") ?? "").trim().replace(/\s+/g, " ");
+  if (text.length < 3) return { error: "Write the question the way a buyer would ask it." };
+  if (text.length > 500) return { error: "Keep questions under 500 characters." };
+  const funnel = String(formData.get("funnel_stage") ?? "");
+  const tags = String(formData.get("tags") ?? "").split(",").map((t) => t.trim()).filter(Boolean).slice(0, 20);
+  const aiApps = formData.getAll("ai_apps").map(String).filter((a) => APPS.has(a));
+  if (aiApps.length === 0) return { error: "Choose at least one AI app." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("questions")
+    .update({
+      text,
+      topic: String(formData.get("topic") ?? "").trim() || null,
+      funnel_stage: FUNNEL.has(funnel) ? funnel : null,
+      tags,
+      ai_apps: aiApps.length === APPS.size ? [] : aiApps,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", questionId)
+    .eq("client_id", clientId)
+    .eq("source", "platform");
+  if (error) return { error: error.code === "23505" ? "That question is already tracked." : friendlyError(error) };
+  revalidatePath(`/c/${clientId}/questions`);
+  return { ok: "Saved." };
+}
