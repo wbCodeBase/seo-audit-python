@@ -8,9 +8,10 @@ const SECTIONS = [
   { href: "/questions", label: "Questions" },
   { href: "/competitors", label: "Competitors" },
   { href: "/answers", label: "Answers" },
+  { href: "/compare", label: "API vs real" },
 ];
 
-export function SectionNav({ base, admin = false }: { base: string; admin?: boolean }) {
+export function SectionNav({ base, admin = false, manager = false }: { base: string; admin?: boolean; manager?: boolean }) {
   const pathname = usePathname();
   const search = useSearchParams();
   // Keep the date range when moving between sections.
@@ -18,7 +19,11 @@ export function SectionNav({ base, admin = false }: { base: string; admin?: bool
   const qs = range ? `?range=${range}` : "";
   return (
     <nav aria-label="Sections" className="flex flex-wrap gap-1 rounded-lg border border-line bg-surface p-1 text-sm">
-      {[...SECTIONS, ...(admin ? [{ href: "/settings", label: "Settings" }] : [])].map((s) => {
+      {[
+        ...SECTIONS,
+        ...(admin || manager ? [{ href: "/usage", label: "Usage" }] : []),
+        ...(admin ? [{ href: "/settings", label: "Settings" }] : []),
+      ].map((s) => {
         const href = base + s.href;
         const active = s.href ? pathname.startsWith(href) : pathname === base;
         return (

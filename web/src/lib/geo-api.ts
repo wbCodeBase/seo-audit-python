@@ -7,9 +7,9 @@ import "server-only";
  */
 export type GeoAction =
   | { action: "plan" }
-  | { action: "start"; client_id: number; trigger: "manual" | "cron"; sync: boolean }
-  | { action: "task"; run_id: string; question_id: number; app: string; repeat: number }
-  | { action: "finish"; run_id: string; metrics: boolean };
+  | { action: "start"; client_id: number; trigger: "manual" | "cron"; sync: boolean; force?: boolean }
+  | { action: "task"; run_id: string; question_id: number; app: string; repeat: number; client_id?: number }
+  | { action: "finish"; run_id: string; metrics: boolean; client_id?: number };
 
 export type GeoResult = { ok: boolean; error?: string; [key: string]: unknown };
 

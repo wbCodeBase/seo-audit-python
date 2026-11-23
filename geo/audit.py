@@ -20,6 +20,8 @@ from sqlalchemy import select
 
 from geo import discovery, sheets_io
 from geo.config import get_settings
+from geo.costs import answer_cost
+from geo.engines import source_of
 from geo.matching import clean_domain, domain_stem, entity_aliases, find_entity, mention_positions
 from geo.models import Answer, Citation, Client, Competitor, Mention, Question, Run
 from geo.providers import available_providers
@@ -208,9 +210,14 @@ def evaluate(check, ctx, result):
 # ── Running the checks ──────────────────────────────────────────────────────
 
 def _ask(check, platform_key, provider, repeat, settings):
-    result = provider["ask"](check["text"])
+    if provider.get("source") == "observed":
+        result = provider["ask"](check["text"], country=check.get("country"))
+    else:
+        result = provider["ask"](check["text"])
     brands, extraction_error = None, ""
-    if settings.discovery_enabled and settings.anthropic_api_key and not result.error:
+    if result.brands is not None and not result.error:
+        brands = result.brands       # the provider already named the brands — no extra LLM call
+    elif settings.discovery_enabled and settings.anthropic_api_key and not result.error:
         brands, info = discovery.extract_brands_llm(
             result.parsed.answer_text, check["text"], settings.anthropic_api_key, settings.discovery_model,
             brand=check["brand"], domain=check["domain"])
@@ -285,10 +292,13 @@ def persist(session, run_id, records, contexts, now):
         usage = dict(res.usage)
         if rec.get("extraction_error"):
             usage["discovery_error"] = rec["extraction_error"]
+        source = source_of(rec["platform"])
+        cost = answer_cost(source, res.model, usage, res.cost_usd)
 
         answer = Answer(
             id=rec["answer_id"], run_id=run_id, question_id=question_id, client_id=client_id,
-            ai_app=rec["platform"], model=res.model or None, repeat=rec["repeat"],
+            ai_app=rec["platform"], source=source, cost_usd=cost,
+            model=res.model or None, repeat=rec["repeat"],
             question_text=ch["text"], intent=rec["intent"],
             answer_text=res.parsed.answer_text or None, grounded=res.parsed.grounded,
             error=res.error or None, top_result=rec["top1"] or None, usage=usage, created_at=now,
@@ -372,7 +382,8 @@ def sync_only(settings=None):
     svc = sheets_io.sheets_service(settings.google_service_account_json)
     if not svc:
         return {"ok": False, "error": "GOOGLE_SERVICE_ACCOUNT_JSON not set or invalid."}
-    known = {k: {} for k in ("claude", "chatgpt")}
+    from geo.engines import ENGINES
+    known = {k: {} for k in ENGINES}   # every engine name is valid in the Platforms column
     checks, skipped = sheets_io.read_checks(svc, settings.google_sheet_id, known)
     with session_scope(settings.database_url) as s:
         contexts = sync_config(s, checks, datetime.now(timezone.utc))

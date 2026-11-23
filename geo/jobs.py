@@ -21,7 +21,8 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
-from geo import audit, sheets_io
+from geo import audit, costs, sheets_io
+from geo.engines import cost_estimate
 from geo.config import get_settings
 from geo.db import session_scope
 from geo.models import Answer, Client, Competitor, Question, Run
@@ -34,8 +35,39 @@ class JobError(Exception):
     pass
 
 
-def _apps_for(question, providers):
-    return [a for a in (question.ai_apps or []) if a in providers] or list(providers)
+# A question is due again this long after its last successful answer. Slightly
+# under the nominal period so a nightly run a few minutes early still counts.
+FREQUENCY_GAP = {"daily": timedelta(0), "weekly": timedelta(days=6, hours=12),
+                 "monthly": timedelta(days=27)}
+
+
+def _apps_for(question, providers, client=None):
+    """Engines to ask: the question's own picks (or every configured one),
+    narrowed to the client's enabled engines when it has a list."""
+    apps = [a for a in (question.ai_apps or []) if a in providers] or list(providers)
+    allowed = list(getattr(client, "engines", None) or [])
+    return [a for a in apps if a in allowed] if allowed else apps
+
+
+def _not_due(s, questions, now):
+    """Ids of questions whose frequency says they don't need asking yet."""
+    gated = {q.id: FREQUENCY_GAP.get(q.frequency or "daily", timedelta(0)) for q in questions}
+    gated = {qid: gap for qid, gap in gated.items() if gap > timedelta(0)}
+    if not gated:
+        return set()
+    last = dict(s.execute(
+        select(Answer.question_id, func.max(Answer.created_at))
+        .where(Answer.question_id.in_(list(gated)), Answer.error.is_(None))
+        .group_by(Answer.question_id)).all())
+    out = set()
+    for qid, gap in gated.items():
+        ts = last.get(qid)
+        if ts is None:
+            continue
+        ts = ts if ts.tzinfo else ts.replace(tzinfo=timezone.utc)
+        if now - ts < gap:
+            out.add(qid)
+    return out
 
 
 def plan(settings=None):
@@ -64,31 +96,54 @@ def _sync_sheet(settings):
         return f"skipped: {type(e).__name__}: {e}"
 
 
-def start(client_id, trigger="manual", sync=True, settings=None):
+def start(client_id, trigger="manual", sync=True, settings=None, force=False):
+    """Open a run for one client. Skips questions that aren't due yet (their
+    frequency) unless force=True, and trims tasks to the client's remaining
+    monthly budget — real-user (observed) tasks are kept first."""
     settings = settings or get_settings()
     providers = available_providers(settings)
     if not providers:
-        raise JobError("No AI app API key configured (ANTHROPIC_API_KEY / OPENAI_API_KEY).")
+        raise JobError("No engine configured — set ANTHROPIC_API_KEY / OPENAI_API_KEY and/or "
+                       "DATAFORSEO_LOGIN + DATAFORSEO_PASSWORD.")
     synced = _sync_sheet(settings) if sync else "not requested"
 
     run_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
     with session_scope(settings.database_url) as s:
         client = s.get(Client, client_id)
         if client is None:
             raise JobError(f"No client with id {client_id}.")
         questions = s.scalars(select(Question).where(
             Question.client_id == client_id, Question.active.is_(True)).order_by(Question.id)).all()
-        tasks = [{"question_id": q.id, "question": q.text, "app": app, "repeat": r}
-                 for q in questions for app in _apps_for(q, providers)
-                 for r in range(1, settings.repeats_per_run + 1)]
+        not_due = set() if force else _not_due(s, questions, now)
+        all_tasks = [{"question_id": q.id, "question": q.text, "app": app, "repeat": r}
+                     for q in questions if q.id not in not_due
+                     for app in _apps_for(q, providers, client)
+                     for r in range(1, settings.repeats_per_run + 1)]
+        budget = client.monthly_budget_usd
+        spent = costs.month_spend(s, client_id, now)
+        tasks, dropped = costs.plan_within_budget(all_tasks, budget, spent)
+        estimate = round(sum(cost_estimate(t["app"]) for t in tasks), 4)
         if tasks:
-            s.add(Run(id=run_id, trigger=trigger, status="running",
-                      started_at=datetime.now(timezone.utc),
-                      stats={"client_id": client_id, "tasks": len(tasks)}))
+            s.add(Run(id=run_id, trigger=trigger, status="running", started_at=now,
+                      stats={"client_id": client_id, "tasks": len(tasks), "estimated_cost_usd": estimate,
+                             "skipped_budget": len(dropped), "skipped_not_due": len(not_due)}))
         name = client.name
+
+    if tasks:
+        message = None
+    elif dropped:
+        message = (f"Monthly budget reached (${spent:.2f} of ${budget:.2f} spent) — "
+                   "raise the budget in Settings or wait for next month.")
+    elif not_due:
+        message = "Nothing is due yet — every active question was asked within its frequency."
+    else:
+        message = "This client has no active questions."
     return {"ok": True, "run_id": run_id if tasks else None, "client": {"id": client_id, "name": name},
-            "sheet": synced, "tasks": tasks,
-            "message": None if tasks else "This client has no active questions."}
+            "sheet": synced, "tasks": tasks, "message": message,
+            "budget": {"monthly_usd": budget, "spent_usd": round(spent, 4), "estimated_run_usd": estimate,
+                       "skipped_tasks": len(dropped)},
+            "skipped_not_due": len(not_due)}
 
 
 def _check_and_context(s, question, client, providers):
@@ -99,7 +154,8 @@ def _check_and_context(s, question, client, providers):
         "brand": client.brand or "",
         "competitors": [c["domain"] for c in ctx["competitors"] if c["domain"]],
         "text": question.text, "topic": question.topic, "funnel_stage": question.funnel_stage,
-        "tags": list(question.tags or []), "platforms": _apps_for(question, providers),
+        "tags": list(question.tags or []), "platforms": _apps_for(question, providers, client),
+        "country": question.country,
     }
     return check, ctx
 
@@ -113,10 +169,19 @@ def _summary(answer):
         "named": any(bool(m.mentioned) for m in ours),
         "mention_position": min(positions) if positions else None,
         "cited": any(m.cited for m in ours),
+        "source": answer.source,
+        "cost_usd": answer.cost_usd,
     }
 
 
-def task(run_id, question_id, app, repeat=1, settings=None):
+def _check_owner(run, client_id):
+    """When the caller acts for one client (a manager's "Run now"), the run
+    must be that client's — so nobody can drive another client's run."""
+    if client_id is not None and (run.stats or {}).get("client_id") != client_id:
+        raise JobError("This run belongs to a different client.")
+
+
+def task(run_id, question_id, app, repeat=1, settings=None, client_id=None):
     settings = settings or get_settings()
     providers = available_providers(settings)
     if app not in providers:
@@ -127,6 +192,7 @@ def task(run_id, question_id, app, repeat=1, settings=None):
         run = s.get(Run, run_id)
         if run is None:
             raise JobError("Unknown run.")
+        _check_owner(run, client_id)
         existing = s.scalar(select(Answer).options(selectinload(Answer.mentions)).where(
             Answer.run_id == run_id, Answer.question_id == question_id,
             Answer.ai_app == app, Answer.repeat == repeat))
@@ -135,9 +201,12 @@ def task(run_id, question_id, app, repeat=1, settings=None):
         if existing is not None:      # a failed earlier attempt — replace it on retry
             s.delete(existing)
         question = s.get(Question, question_id)
-        if question is None:
+        if question is None or question.client_id != (run.stats or {}).get("client_id", question.client_id):
             raise JobError("Unknown question.")
         client = s.get(Client, question.client_id)
+        if client.monthly_budget_usd is not None and \
+                costs.month_spend(s, client.id) + cost_estimate(app) > client.monthly_budget_usd:
+            raise JobError("Monthly budget reached for this client — nothing was spent.")
         check, ctx = _check_and_context(s, question, client, providers)
 
     # 2) ask the AI app (+ cheap competitor-discovery pass)
@@ -188,12 +257,13 @@ def _sheet_rows_for_run(s, run_id):
     return by_app
 
 
-def finish(run_id, metrics=True, settings=None):
+def finish(run_id, metrics=True, settings=None, client_id=None):
     settings = settings or get_settings()
     with session_scope(settings.database_url) as s:
         run = s.get(Run, run_id)
         if run is None:
             raise JobError("Unknown run.")
+        _check_owner(run, client_id)
         total = s.scalar(select(func.count()).select_from(Answer).where(Answer.run_id == run_id)) or 0
         errors = s.scalar(select(func.count()).select_from(Answer).where(
             Answer.run_id == run_id, Answer.error.is_not(None))) or 0

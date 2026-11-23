@@ -66,6 +66,10 @@ class Settings:
     sentiment_model: str
     metrics_days: int
     max_workers: int
+    dataforseo_login: str = ""
+    dataforseo_password: str = ""
+    dataforseo_location_code: int = 2840
+    observed_engines: tuple = ()     # empty = every observed engine
 
 
 def get_settings():
@@ -85,4 +89,8 @@ def get_settings():
         sentiment_model=_env("SENTIMENT_MODEL") or "claude-haiku-5-5",
         metrics_days=max(1, _int("METRICS_DAYS", 7)),
         max_workers=max(1, _int("MAX_WORKERS", 6)),
+        dataforseo_login=_env("DATAFORSEO_LOGIN"),
+        dataforseo_password=_env("DATAFORSEO_PASSWORD"),
+        dataforseo_location_code=_int("DATAFORSEO_LOCATION_CODE", 2840),
+        observed_engines=tuple(_list("OBSERVED_ENGINES", [])),
     )

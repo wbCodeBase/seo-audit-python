@@ -5,11 +5,11 @@ import { RunNow } from "@/components/run-now";
 
 export default async function ClientLayout(props: LayoutProps<"/c/[clientId]">) {
   const { clientId } = await props.params;
-  const { viewer, client, editable } = await requireClient(clientId);
+  const { viewer, client, editable, manageable } = await requireClient(clientId);
   const isAdmin = viewer.role === "admin";
 
   let activeQuestions = 0;
-  if (isAdmin) {
+  if (manageable) {
     const supabase = await createClient();
     const { count } = await supabase
       .from("questions")
@@ -32,10 +32,10 @@ export default async function ClientLayout(props: LayoutProps<"/c/[clientId]">) 
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <SectionNav base={`/c/${client.id}`} admin={isAdmin} />
+            <SectionNav base={`/c/${client.id}`} admin={isAdmin} manager={manageable} />
           </div>
         </div>
-        {isAdmin && (
+        {manageable && (
           <div className="flex justify-end">
             <RunNow clientId={client.id} activeQuestions={activeQuestions} />
           </div>

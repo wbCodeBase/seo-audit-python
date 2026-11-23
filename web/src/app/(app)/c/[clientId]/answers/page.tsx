@@ -3,7 +3,7 @@ import Link from "next/link";
 import { requireClient } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { dateTime } from "@/lib/format";
-import { appLabel } from "@/lib/types";
+import { appLabel, ENGINES, SOURCE_LABEL, sourceOf } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Answers" };
 
@@ -20,6 +20,7 @@ type AnswerRow = {
   grounded: boolean;
   sentiment: number | null;
   created_at: string;
+  usage: { observed?: { ai_overview_shown?: boolean; location_code?: number } } | null;
   mentions: {
     entity_type: string; entity_name: string; mentioned: boolean | null;
     mention_position: number | null; rank: number | null; cited: boolean;
@@ -43,7 +44,7 @@ export default async function AnswersPage(props: PageProps<"/c/[clientId]/answer
   let query = supabase
     .from("answers")
     .select(
-      "id, ai_app, model, repeat, question_id, question_text, answer_text, grounded, sentiment, created_at, " +
+      "id, ai_app, model, repeat, question_id, question_text, answer_text, grounded, sentiment, created_at, usage, " +
         "mentions(entity_type, entity_name, mentioned, mention_position, rank, cited), " +
         "citations(position, url, domain, title)",
     )
@@ -79,8 +80,7 @@ export default async function AnswersPage(props: PageProps<"/c/[clientId]/answer
           <label className="label" htmlFor="a-app">AI app</label>
           <select id="a-app" name="app" defaultValue={app} className="input w-auto">
             <option value="">All</option>
-            <option value="claude">Claude</option>
-            <option value="chatgpt">ChatGPT</option>
+            {ENGINES.map((e) => <option key={e.key} value={e.key}>{e.label}</option>)}
           </select>
         </div>
         <div className="min-w-64 flex-1">
@@ -101,6 +101,8 @@ export default async function AnswersPage(props: PageProps<"/c/[clientId]/answer
         const ours = a.mentions.filter((m) => m.entity_type !== "competitor");
         const named = ours.some((m) => m.mentioned ?? m.cited);
         const pos = Math.min(...ours.map((m) => m.mention_position ?? Infinity));
+        const real = sourceOf(a.ai_app) === "observed";
+        const noOverview = a.usage?.observed?.ai_overview_shown === false;
         return (
           <article key={a.id} className="card p-4">
             <header className="flex flex-wrap items-start justify-between gap-2">
@@ -108,10 +110,15 @@ export default async function AnswersPage(props: PageProps<"/c/[clientId]/answer
                 <h2 className="font-medium">{a.question_text}</h2>
                 <p className="text-xs text-muted">
                   {appLabel(a.ai_app)}{a.model ? ` · ${a.model}` : ""} · {dateTime(a.created_at)}
-                  {a.repeat > 1 ? ` · repeat ${a.repeat}` : ""}{a.grounded ? "" : " · answered without web search"}
+                  {a.repeat > 1 ? ` · repeat ${a.repeat}` : ""}
+                  {!real && !a.grounded ? " · answered without web search" : ""}
                 </p>
               </div>
               <div className="flex flex-wrap gap-1">
+                <span className={`chip ${real ? "border-accent text-ink" : ""}`}
+                  title={real ? "Captured from the real product, as a user sees it" : "From the vendor's developer API"}>
+                  {SOURCE_LABEL[real ? "observed" : "api"]}
+                </span>
                 <span className={`chip ${named ? "border-transparent bg-good-wash text-good-ink" : "border-transparent bg-critical-wash text-critical-ink"}`}>
                   {named ? `✓ ${client.name} named${Number.isFinite(pos) ? ` #${pos}` : ""}` : `✕ ${client.name} not named`}
                 </span>
@@ -119,7 +126,11 @@ export default async function AnswersPage(props: PageProps<"/c/[clientId]/answer
               </div>
             </header>
 
-            {a.answer_text ? (
+            {noOverview ? (
+              <p className="mt-3 text-sm text-ink-2">
+                Google showed no AI answer for this search, so nobody was named. That can change from day to day.
+              </p>
+            ) : a.answer_text ? (
               <details className="mt-3" open={Boolean(answerId)}>
                 <summary className="cursor-pointer text-sm text-ink-2">Full answer</summary>
                 <div className="mt-2 whitespace-pre-wrap rounded-lg bg-surface-2 p-3 text-sm leading-relaxed">{a.answer_text}</div>

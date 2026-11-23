@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { dateTime } from "@/lib/format";
 import { shiftDays, todayIST } from "@/lib/filters";
 import { ActionForm } from "@/components/action-form";
-import { updateClient } from "./actions";
+import { updateClient, updateTracking } from "./actions";
+import { ENGINES, SOURCE_LABEL } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -22,7 +23,7 @@ export default async function SettingsPage(props: PageProps<"/c/[clientId]/setti
 
   const since = shiftDays(todayIST(), -60);
   const [{ data: full }, { data: answers }] = await Promise.all([
-    supabase.from("clients").select("aliases").eq("id", client.id).maybeSingle(),
+    supabase.from("clients").select("aliases, engines, monthly_budget_usd").eq("id", client.id).maybeSingle(),
     supabase.from("answers").select("run_id, error, ai_app").eq("client_id", client.id)
       .gte("created_at", since).limit(5000),
   ]);
@@ -68,6 +69,44 @@ export default async function SettingsPage(props: PageProps<"/c/[clientId]/setti
             If this client also comes from the Google Sheet, its name must match the sheet&apos;s Project column.
           </p>
           <div className="md:col-span-2"><button className="btn-primary">Save</button></div>
+        </ActionForm>
+      </section>
+
+      <section className="card p-4">
+        <h2 className="font-medium">Engines &amp; budget</h2>
+        <p className="mb-3 text-sm text-ink-2">
+          <strong>Real user view</strong> engines capture exactly what people see in ChatGPT, Gemini and Google — about
+          half a cent per answer, and the most accurate. <strong>API estimate</strong> engines ask the vendors&apos;
+          developer APIs — several cents per answer, and they often differ from the real apps. Check “API vs real” to
+          see how much they disagree for this client.
+        </p>
+        <ActionForm action={updateTracking.bind(null, client.id)} className="space-y-3">
+          <div className="grid gap-4 sm:grid-cols-2">
+            {(["observed", "api"] as const).map((src) => (
+              <fieldset key={src} className="space-y-1 text-sm">
+                <legend className="label">{SOURCE_LABEL[src]}</legend>
+                {ENGINES.filter((e) => e.source === src).map((e) => {
+                  const enabled = (full?.engines as string[] | undefined) ?? [];
+                  return (
+                    <label key={e.key} className="flex items-center gap-2">
+                      <input type="checkbox" name="engines" value={e.key}
+                        defaultChecked={enabled.length === 0 || enabled.includes(e.key)} /> {e.label}
+                    </label>
+                  );
+                })}
+              </fieldset>
+            ))}
+          </div>
+          <div className="max-w-xs">
+            <label className="label" htmlFor="s-budget">Monthly budget (USD, empty = no cap)</label>
+            <input id="s-budget" name="budget" type="number" min="0" step="0.5" className="input"
+              defaultValue={(full?.monthly_budget_usd as number | null) ?? ""} placeholder="e.g. 25" />
+          </div>
+          <p className="text-xs text-muted">
+            Real-user engines also need DATAFORSEO_LOGIN / DATAFORSEO_PASSWORD on the engine project; engines without
+            credentials are skipped. When the budget would be passed, real-user answers are kept and API ones dropped first.
+          </p>
+          <button className="btn-primary">Save</button>
         </ActionForm>
       </section>
 

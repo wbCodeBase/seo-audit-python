@@ -2,8 +2,10 @@
 
 This repo hosts three things:
 
-1. **AI Visibility (GEO) audit** — a daily job that asks AI apps (Claude,
-   ChatGPT) your clients' keywords and buyer questions with live web search,
+1. **AI Visibility (GEO) audit** — a daily job that asks AI engines your
+   clients' keywords and buyer questions — both the **real user view**
+   (actual ChatGPT, Gemini, Google AI Overview / AI Mode answers, captured via
+   DataForSEO) and the **API estimate** (Claude / ChatGPT developer APIs) —
    and records whether each client and its competitors are found, cited and
    *named* in the answer. Results go to **Postgres (Supabase)** and, while
    we transition, to the Google Sheet too. Day-to-day usage for the team is in
@@ -112,7 +114,9 @@ database is unreachable during a run, it falls back to the sheet and reports
 - **Scheduled:** the **web** project's Vercel Cron, daily 15:30 UTC (21:00 IST)
   — see `web/vercel.json`. It needs `GEO_API_URL` + `CRON_SECRET` set on the web
   project. The Python project keeps only the 22:00 IST metrics cron.
-- **On demand:** the **Run now** button on a client page (admins).
+- **On demand:** the **Run now** button on a client page (admins and that
+  client's managers). Weekly/monthly questions that aren't due are skipped
+  unless "include questions not due yet" is ticked.
 - **Old single-call run:** `https://<python-app>/api/scheduled_audit?secret=<CRON_SECRET>`
   (can hit the serverless time limit once there are many questions).
 - **Locally:** `python -m geo run` (uses real API credits; prints the JSON result).
@@ -128,6 +132,7 @@ holding a user's login get the same rules:
 | Who | Sees | Can change |
 |---|---|---|
 | **Admin** (in-house, `profiles.role = 'admin'`) | Every client, runs, users | Everything |
+| **Client manager** (`client_members.role = 'manager'`) | Only their client(s) + its spend | Editor rights + **Run now** for that client, within its budget |
 | **Client editor** (`client_members.role = 'editor'`) | Only their client(s) | That client's questions and competitor review |
 | **Client viewer** (`client_members.role = 'viewer'`) | Only their client(s) | Nothing |
 | Not signed in (publishable key) | Nothing | Nothing |
@@ -142,6 +147,50 @@ python -m geo make-admin you@agency.com
 python -m geo add-member person@client.com "SaasWorx" editor   # or viewer
 python -m geo remove-member person@client.com "SaasWorx"
 ```
+
+Cost data (`answers.cost_usd`) is agency-internal: column privileges hide it
+from every signed-in user, and it's only readable through `geo_spend()`, which
+returns totals for clients the caller is admin/manager of (migration `0004`).
+A migration that adds a column to `answers` must also `grant select (col)` on
+it to `authenticated`.
+
+### 5b. Real user view vs API estimate
+
+The API engines don't reproduce what people see in the apps (different system
+prompt, search index, location and model routing) and get expensive when you
+sample more. So each question can also be captured as **real users see it**:
+
+| Engine key | What | Typical cost / answer |
+|---|---|---|
+| `chatgpt_web` | chatgpt.com answer (text, cited sources, brands it named) | ~$0.004 |
+| `gemini_web` | gemini.google.com answer | ~$0.004 |
+| `google_aio` | Google AI Overview on the results page ("none shown" is recorded too) | ~$0.002 |
+| `google_ai_mode` | Google AI Mode answer | ~$0.004 |
+| `chatgpt`, `claude` | developer API with web search (existing) | ~$0.03–0.10 |
+
+Captured through DataForSEO's LLM Scraper and SERP APIs (`geo/observed.py`):
+we don't drive a browser against those sites ourselves, which would break their
+terms and get blocked. Set `DATAFORSEO_LOGIN` / `DATAFORSEO_PASSWORD` on the
+Python project; the market comes from each question's country (else
+`DATAFORSEO_LOCATION_CODE`). Real-user engines are separate `ai_app` keys, so
+every metric, the matrix and competitor share of voice work for them unchanged.
+
+In the web app:
+- **Overview** leads with the real user view whenever there is any; a switch
+  shows API estimates or both.
+- **API vs real** shows, per question, both answers side by side and how often
+  the API agrees with real ChatGPT on whether you're named, which sources it
+  cites, and the position gap — i.e. how far to trust the cheap numbers.
+- **Settings** (admin): which engines a client is tracked on, monthly budget.
+- **Usage** (admin/manager): spend this month by engine, budget used, projection.
+  **Admin → Usage** shows every client.
+- **Questions**: per-question engines, frequency (daily / weekly / monthly —
+  the nightly run skips questions that aren't due) and market.
+
+Budgets: before a run, tasks are trimmed so estimated spend stays within the
+client's remaining monthly budget, keeping real-user tasks first; each task
+re-checks before spending. Actual cost is saved per answer (billed amount for
+real-user engines, tokens × `MODEL_PRICES` + search fees for API ones).
 
 ### 6. Metrics
 

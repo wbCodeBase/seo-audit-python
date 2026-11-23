@@ -33,7 +33,13 @@ export const getViewer = cache(async (): Promise<Viewer> => {
 });
 
 export function canEdit(viewer: Viewer, clientId: number) {
-  return viewer.role === "admin" || viewer.memberRoles[clientId] === "editor";
+  const r = viewer.memberRoles[clientId];
+  return viewer.role === "admin" || r === "editor" || r === "manager";
+}
+
+/** May run audits (spends money) and see spend for this client. */
+export function canManage(viewer: Viewer, clientId: number) {
+  return viewer.role === "admin" || viewer.memberRoles[clientId] === "manager";
 }
 
 /** The client a page is about, or a redirect if the viewer can't see it. */
@@ -42,7 +48,7 @@ export async function requireClient(clientIdParam: string) {
   const id = Number(clientIdParam);
   const client = viewer.clients.find((c) => c.id === id);
   if (!client) redirect("/");
-  return { viewer, client, editable: canEdit(viewer, client.id) };
+  return { viewer, client, editable: canEdit(viewer, client.id), manageable: canManage(viewer, client.id) };
 }
 
 export async function requireAdmin() {

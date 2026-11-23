@@ -6,11 +6,11 @@ Local / server entry point (also what the Docker app container runs):
   python -m geo metrics [--days N]               score sentiment + recompute daily metrics
                                                  (default: last METRICS_DAYS days; use a big N to backfill)
   python -m geo make-admin EMAIL                 give a signed-up user full admin access
-  python -m geo add-member EMAIL CLIENT [viewer|editor]
-                                                 let a client user see (viewer) or manage (editor) a client
+  python -m geo add-member EMAIL CLIENT [viewer|editor|manager]
+                                                 see (viewer), manage questions (editor) or also run + see spend (manager)
   python -m geo remove-member EMAIL CLIENT
   python -m geo invite EMAIL admin               grant admin now, or on first sign-in if not signed up yet
-  python -m geo invite EMAIL CLIENT [viewer|editor]
+  python -m geo invite EMAIL CLIENT [viewer|editor|manager]
 """
 import json
 import os

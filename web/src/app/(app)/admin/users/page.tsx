@@ -13,7 +13,14 @@ import {
 export const metadata: Metadata = { title: "Users" };
 
 type ProfileRow = { id: string; email: string | null; role: "admin" | "client"; created_at: string };
-type MemberRow = { user_id: string; client_id: number; role: "viewer" | "editor" };
+type MemberRow = { user_id: string; client_id: number; role: "viewer" | "editor" | "manager" };
+const ROLE_OPTIONS = (
+  <>
+    <option value="viewer">Viewer</option>
+    <option value="editor">Editor</option>
+    <option value="manager">Manager</option>
+  </>
+);
 type InviteRow = {
   id: number; email: string; role: string; client_id: number | null;
   member_role: string | null; created_at: string;
@@ -42,7 +49,8 @@ export default async function UsersPage() {
         <h1 className="text-xl font-semibold">Users</h1>
         <p className="text-sm text-ink-2">
           Admins see and manage every client. Client users see only the clients listed against them — viewers can
-          look, editors can also manage questions and competitors.
+          look, editors can also manage questions and competitors, managers can also run audits and see that
+          client&apos;s spend (within the budget an admin sets).
         </p>
       </div>
 
@@ -69,8 +77,7 @@ export default async function UsersPage() {
           <div>
             <label className="label" htmlFor="u-role">Client role</label>
             <select id="u-role" name="member_role" className="input">
-              <option value="viewer">Viewer</option>
-              <option value="editor">Editor</option>
+              {ROLE_OPTIONS}
             </select>
           </div>
           <button className="btn-primary">Save user</button>
@@ -119,9 +126,10 @@ export default async function UsersPage() {
                             <li key={m.client_id} className="flex flex-wrap items-center gap-2">
                               <span>{clientName.get(m.client_id) ?? `#${m.client_id}`}</span>
                               <span className="chip">{m.role}</span>
-                              <ActionButton className={small}
-                                label={m.role === "viewer" ? "Make editor" : "Make viewer"}
-                                action={setMemberRole.bind(null, p.id, m.client_id, m.role === "viewer" ? "editor" : "viewer")} />
+                              {(["viewer", "editor", "manager"] as const).filter((r) => r !== m.role).map((r) => (
+                                <ActionButton key={r} className={small} label={`Make ${r}`}
+                                  action={setMemberRole.bind(null, p.id, m.client_id, r)} />
+                              ))}
                               <ActionButton className={small} label="Remove" action={removeMember.bind(null, p.id, m.client_id)} />
                             </li>
                           ))}
@@ -132,8 +140,7 @@ export default async function UsersPage() {
                               {addable.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                             <select name="member_role" className="input w-auto py-0.5 text-xs" aria-label="Role">
-                              <option value="viewer">Viewer</option>
-                              <option value="editor">Editor</option>
+                              {ROLE_OPTIONS}
                             </select>
                             <button className={small}>Add access</button>
                           </ActionForm>

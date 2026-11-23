@@ -1,7 +1,47 @@
 import type { Metadata } from "next";
 import { requireClient } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { appLabel, type Question } from "@/lib/types";
+import { appLabel, ENGINES, SOURCE_LABEL, type Question } from "@/lib/types";
+
+const FREQ_LABEL: Record<string, string> = { daily: "Daily", weekly: "Weekly", monthly: "Monthly" };
+
+function EngineChecks({ selected, small = false }: { selected: string[] | null; small?: boolean }) {
+  return (
+    <div className={`grid gap-x-4 gap-y-1 sm:grid-cols-2 ${small ? "text-xs" : "text-sm"}`}>
+      {(["observed", "api"] as const).map((src) => (
+        <div key={src} className="space-y-1">
+          <div className="text-xs text-muted">{SOURCE_LABEL[src]}</div>
+          {ENGINES.filter((e) => e.source === src).map((e) => (
+            <label key={e.key} className="flex items-center gap-1.5">
+              <input type="checkbox" name="ai_apps" value={e.key}
+                defaultChecked={!selected || selected.length === 0 || selected.includes(e.key)} /> {e.label}
+            </label>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ScheduleFields({ q, idPrefix }: { q?: Question; idPrefix: string }) {
+  return (
+    <>
+      <div>
+        <label className="label" htmlFor={`${idPrefix}-freq`}>How often</label>
+        <select id={`${idPrefix}-freq`} name="frequency" defaultValue={q?.frequency ?? "daily"} className="input">
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly (cheaper)</option>
+          <option value="monthly">Monthly (cheapest)</option>
+        </select>
+      </div>
+      <div>
+        <label className="label" htmlFor={`${idPrefix}-country`}>Market (country code)</label>
+        <input id={`${idPrefix}-country`} name="country" defaultValue={q?.country ?? ""} maxLength={2}
+          className="input" placeholder="us, in, gb…" />
+      </div>
+    </>
+  );
+}
 import { ActionForm } from "@/components/action-form";
 import { ActionButton } from "@/components/row-actions";
 import { addQuestion, deleteQuestion, setQuestionActive, updateQuestion } from "./actions";
@@ -14,7 +54,7 @@ export default async function QuestionsPage(props: PageProps<"/c/[clientId]/ques
   const supabase = await createClient();
   const { data } = await supabase
     .from("questions")
-    .select("id, client_id, kind, text, topic, funnel_stage, tags, active, ai_apps, source, created_at")
+    .select("id, client_id, kind, text, topic, funnel_stage, tags, active, ai_apps, source, frequency, country, created_at")
     .eq("client_id", client.id)
     .order("active", { ascending: false })
     .order("created_at", { ascending: false });
@@ -26,7 +66,8 @@ export default async function QuestionsPage(props: PageProps<"/c/[clientId]/ques
         <section className="card p-4">
           <h2 className="font-medium">Add a buyer question</h2>
           <p className="mb-3 text-sm text-ink-2">
-            Write it the way a real buyer would ask an AI app. It&apos;s asked every day from the next run.
+            Write it the way a real buyer would ask an AI app. Pick how often to ask it and where the buyer is —
+            real-user answers are captured from that country.
           </p>
           <ActionForm action={addQuestion.bind(null, client.id)} resetOnSuccess className="grid gap-3 md:grid-cols-6">
             <div className="md:col-span-6">
@@ -51,15 +92,10 @@ export default async function QuestionsPage(props: PageProps<"/c/[clientId]/ques
               <label className="label" htmlFor="tags">Tags (comma-separated)</label>
               <input id="tags" name="tags" className="input" placeholder="partners, india" />
             </div>
-            <fieldset className="flex flex-col justify-end">
-              <legend className="label">AI apps</legend>
-              <div className="flex gap-3 text-sm">
-                {["claude", "chatgpt"].map((a) => (
-                  <label key={a} className="flex items-center gap-1.5">
-                    <input type="checkbox" name="ai_apps" value={a} defaultChecked /> {appLabel(a)}
-                  </label>
-                ))}
-              </div>
+            <ScheduleFields idPrefix="new" />
+            <fieldset className="md:col-span-4">
+              <legend className="label">Engines (only those enabled for this client are asked)</legend>
+              <EngineChecks selected={null} />
             </fieldset>
             <div className="md:col-span-6">
               <button className="btn-primary">Add question</button>
@@ -74,7 +110,7 @@ export default async function QuestionsPage(props: PageProps<"/c/[clientId]/ques
             <tr>
               <th className="th">Question</th>
               <th className="th">Topic · stage</th>
-              <th className="th">AI apps</th>
+              <th className="th">Engines · schedule</th>
               <th className="th">Status</th>
               {editable && <th className="th"><span className="sr-only">Actions</span></th>}
             </tr>
@@ -91,7 +127,12 @@ export default async function QuestionsPage(props: PageProps<"/c/[clientId]/ques
                   </div>
                 </td>
                 <td className="td">{[q.topic, q.funnel_stage].filter(Boolean).join(" · ") || "—"}</td>
-                <td className="td">{q.ai_apps.length ? q.ai_apps.map(appLabel).join(", ") : "All"}</td>
+                <td className="td">
+                  <div>{q.ai_apps.length ? q.ai_apps.map(appLabel).join(", ") : "All enabled"}</div>
+                  <div className="text-xs text-muted">
+                    {FREQ_LABEL[q.frequency] ?? q.frequency}{q.country ? ` · ${q.country.toUpperCase()}` : ""}
+                  </div>
+                </td>
                 <td className="td">{q.active ? "Active" : "Paused"}</td>
                 {editable && (
                   <td className="td">
@@ -105,7 +146,7 @@ export default async function QuestionsPage(props: PageProps<"/c/[clientId]/ques
                         </div>
                         <details>
                           <summary className="cursor-pointer text-xs text-ink-2">Edit</summary>
-                          <ActionForm action={updateQuestion.bind(null, client.id, q.id)} className="mt-2 grid w-72 gap-2">
+                          <ActionForm action={updateQuestion.bind(null, client.id, q.id)} className="mt-2 grid w-80 gap-2">
                             <textarea name="text" required maxLength={500} rows={3} defaultValue={q.text}
                               className="input" aria-label="Question" />
                             <input name="topic" defaultValue={q.topic ?? ""} placeholder="Topic" className="input" aria-label="Topic" />
@@ -116,14 +157,8 @@ export default async function QuestionsPage(props: PageProps<"/c/[clientId]/ques
                               <option value="BOFU">BOFU · decision</option>
                             </select>
                             <input name="tags" defaultValue={q.tags.join(", ")} placeholder="Tags" className="input" aria-label="Tags" />
-                            <div className="flex gap-3 text-xs">
-                              {["claude", "chatgpt"].map((a) => (
-                                <label key={a} className="flex items-center gap-1">
-                                  <input type="checkbox" name="ai_apps" value={a}
-                                    defaultChecked={q.ai_apps.length === 0 || q.ai_apps.includes(a)} /> {appLabel(a)}
-                                </label>
-                              ))}
-                            </div>
+                            <ScheduleFields q={q} idPrefix={`q${q.id}`} />
+                            <EngineChecks selected={q.ai_apps} small />
                             <button className="btn">Save changes</button>
                           </ActionForm>
                         </details>

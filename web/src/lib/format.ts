@@ -2,6 +2,10 @@ export function pct(v: number | null | undefined, digits = 0) {
   return v == null ? "—" : `${v.toFixed(digits)}%`;
 }
 
+export function usd(v: number | null | undefined, digits = 2) {
+  return v == null ? "—" : `$${v.toFixed(digits)}`;
+}
+
 export function score(v: number | null | undefined) {
   return v == null ? "—" : Math.round(v).toString();
 }

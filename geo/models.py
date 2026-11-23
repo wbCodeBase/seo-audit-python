@@ -40,7 +40,10 @@ FUNNEL_STAGES = ("TOFU", "MOFU", "BOFU")
 RELATIONSHIPS = ("self", "direct", "indirect", "ignored", "pending")
 ENTITY_TYPES = ("own", "own brand", "competitor")
 USER_ROLES = ("admin", "client")
-MEMBER_ROLES = ("viewer", "editor")
+# viewer: read · editor: + questions & competitor review · manager: + run
+# audits and see spend for that client (within its budget)
+MEMBER_ROLES = ("viewer", "editor", "manager")
+FREQUENCIES = ("daily", "weekly", "monthly")
 QUESTION_SOURCES = ("sheet", "platform")
 
 
@@ -52,6 +55,10 @@ class Client(Base):
     domain:     Mapped[str] = mapped_column(String(255))
     brand:      Mapped[str | None] = mapped_column(String(200))
     aliases:    Mapped[list] = mapped_column(JSON, default=list)
+    # Which engines (geo.engines keys) this client is tracked on; [] = every
+    # configured engine. Budget is USD per calendar month (IST); NULL = no cap.
+    engines:            Mapped[list] = mapped_column(JSON, default=list)
+    monthly_budget_usd: Mapped[float | None] = mapped_column(Float)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
 
@@ -124,6 +131,8 @@ class Answer(Base):
     question_id:   Mapped[int] = mapped_column(ForeignKey("questions.id", ondelete="CASCADE"))
     client_id:     Mapped[int] = mapped_column(ForeignKey("clients.id", ondelete="CASCADE"), index=True)
     ai_app:        Mapped[str] = mapped_column(String(30))
+    source:        Mapped[str] = mapped_column(String(20), default="api")   # api | observed (geo.engines)
+    cost_usd:      Mapped[float | None] = mapped_column(Float)              # what this answer cost us
     model:         Mapped[str | None] = mapped_column(String(100))
     repeat:        Mapped[int] = mapped_column(Integer, default=1)
     question_text: Mapped[str] = mapped_column(Text)        # snapshot of what was actually asked
