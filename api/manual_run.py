@@ -4,7 +4,7 @@ Job API behind the web app's "Run now" button and nightly cron. Each call does
 a small piece of work so it stays well inside the serverless time limit:
 
   {"action": "plan"}                                        → clients with active questions
-  {"action": "start",  "client_id": 5, "trigger": "manual", "sync": true}
+  {"action": "start",  "client_id": 5, "trigger": "manual", "sync": true, "force": false}
                                                             → run_id + tasks
   {"action": "task",   "run_id": "...", "question_id": 12, "app": "claude", "repeat": 1}
                                                             → one AI answer saved
@@ -63,17 +63,20 @@ class handler(BaseHTTPRequestHandler):
                 result = jobs.plan()
             elif action == "start":
                 trigger = body.get("trigger") if body.get("trigger") in ("manual", "cron") else "manual"
-                result = jobs.start(_int(body, "client_id"), trigger=trigger, sync=bool(body.get("sync", True)))
+                result = jobs.start(_int(body, "client_id"), trigger=trigger, sync=bool(body.get("sync", True)),
+                                    force=bool(body.get("force", False)))
             elif action == "task":
                 app = body.get("app")
                 if not isinstance(app, str) or not isinstance(body.get("run_id"), str):
                     raise ValueError("run_id and app must be strings")
                 result = jobs.task(body["run_id"], _int(body, "question_id"), app,
-                                   repeat=_int(body, "repeat") if "repeat" in body else 1)
+                                   repeat=_int(body, "repeat") if "repeat" in body else 1,
+                                   client_id=_int(body, "client_id") if "client_id" in body else None)
             elif action == "finish":
                 if not isinstance(body.get("run_id"), str):
                     raise ValueError("run_id must be a string")
-                result = jobs.finish(body["run_id"], metrics=bool(body.get("metrics", True)))
+                result = jobs.finish(body["run_id"], metrics=bool(body.get("metrics", True)),
+                                     client_id=_int(body, "client_id") if "client_id" in body else None)
             else:
                 return self._json(400, {"ok": False, "error": "Unknown action"})
         except ValueError as e:

@@ -1,0 +1,62 @@
+# Production stack for a single VPS (Ubuntu + Docker). Database and sign-in
+# stay on Supabase; everything else runs here.
+#
+#   docker compose -f docker-compose.prod.yml up -d --build      # start / update
+#   docker compose -f docker-compose.prod.yml run --rm api alembic upgrade head
+#   docker compose -f docker-compose.prod.yml exec api python -m geo sync
+#   docker compose -f docker-compose.prod.yml logs -f api
+#
+# Env files (all gitignored, created on the server):
+#   .env                 Python side — same names as .env.example (DATABASE_URL, keys, CRON_SECRET…)
+#   web/.env.production  Next.js — same names as web/.env.example
+#   deploy/.env          APP_DOMAIN, API_DOMAIN, ACME_EMAIL (for Caddy / HTTPS)
+# The web build args NEXT_PUBLIC_SUPABASE_URL / _PUBLISHABLE_KEY are read from the root .env.
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: deploy/api.Dockerfile
+    env_file: .env
+    restart: unless-stopped
+    expose: ["8000"]
+
+  web:
+    build:
+      context: web
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:?set in the root .env}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:?set in the root .env}
+    env_file: web/.env.production
+    environment:
+      GEO_API_URL: http://api:8000          # internal network; never leaves the server
+    restart: unless-stopped
+    expose: ["3000"]
+    depends_on: [api]
+
+  scheduler:
+    image: alpine:3.20
+    env_file: .env                          # only CRON_SECRET is used
+    volumes:
+      - ./deploy/scheduler.sh:/scheduler.sh:ro
+    entrypoint: ["sh", "/scheduler.sh"]
+    restart: unless-stopped
+    depends_on: [web, api]
+
+  caddy:
+    image: caddy:2
+    env_file: deploy/.env
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    depends_on: [web, api]
+
+volumes:
+  caddy_data:
+  caddy_config:

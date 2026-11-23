@@ -2,7 +2,8 @@
 // match geo/models.py and alembic migrations 0001–0003.
 
 export type Role = "admin" | "client";
-export type MemberRole = "viewer" | "editor";
+// viewer: read · editor: + questions/competitors · manager: + run audits, see spend
+export type MemberRole = "viewer" | "editor" | "manager";
 export type Relationship = "self" | "direct" | "indirect" | "ignored" | "pending";
 
 export interface Client {
@@ -10,6 +11,14 @@ export interface Client {
   name: string;
   domain: string;
   brand: string | null;
+}
+
+export interface SpendRow {
+  client_id: number;
+  ai_app: string;
+  source: Source;
+  answers: number;
+  cost_usd: number;
 }
 
 export interface Question {
@@ -23,6 +32,8 @@ export interface Question {
   active: boolean;
   ai_apps: string[];
   source: "sheet" | "platform";
+  frequency: "daily" | "weekly" | "monthly";
+  country: string | null;
   created_at: string;
 }
 
@@ -85,12 +96,25 @@ export interface Viewer {
   memberRoles: Record<number, MemberRole>;
 }
 
-export const AI_APP_LABELS: Record<string, string> = {
-  claude: "Claude",
-  chatgpt: "ChatGPT",
-  gemini: "Gemini",
-  perplexity: "Perplexity",
-  google_aio: "Google AI Overviews",
-};
+/**
+ * Mirrors geo/engines.py. "api" = we ask the vendor's developer API (cheap
+ * proxy); "observed" = what a real user sees in the product, captured by the
+ * data provider (the ground truth). `family` pairs the two for comparison.
+ */
+export type Source = "api" | "observed";
+export interface EngineInfo { key: string; label: string; source: Source; family: string }
 
-export const appLabel = (app: string) => AI_APP_LABELS[app] ?? app;
+export const ENGINES: EngineInfo[] = [
+  { key: "chatgpt_web", label: "ChatGPT · real", source: "observed", family: "chatgpt" },
+  { key: "gemini_web", label: "Gemini · real", source: "observed", family: "gemini" },
+  { key: "google_aio", label: "Google AI Overviews", source: "observed", family: "google" },
+  { key: "google_ai_mode", label: "Google AI Mode", source: "observed", family: "google_ai_mode" },
+  { key: "chatgpt", label: "ChatGPT · API", source: "api", family: "chatgpt" },
+  { key: "claude", label: "Claude · API", source: "api", family: "claude" },
+];
+
+export const ENGINE_KEYS = ENGINES.map((e) => e.key);
+export const engineInfo = (key: string) => ENGINES.find((e) => e.key === key);
+export const sourceOf = (key: string): Source => engineInfo(key)?.source ?? "api";
+export const appLabel = (app: string) => engineInfo(app)?.label ?? app;
+export const SOURCE_LABEL: Record<Source, string> = { observed: "Real user view", api: "API estimate" };

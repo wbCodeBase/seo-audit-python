@@ -24,6 +24,10 @@ class ProviderResult:
     model: str = ""
     usage: dict = field(default_factory=dict)
     error: str = ""
+    # Observed engines only: the provider's billed amount, and brands the
+    # provider already identified (skips the paid extraction pass when set).
+    cost_usd: float | None = None
+    brands: list | None = None
 
 
 _BILLING_HINTS = ("insufficient_quota", "credit_balance", "credit balance", "no credits", "billing")
@@ -135,9 +139,26 @@ _REGISTRY = {
 }
 
 
+def ask_observed(app, prompt, settings, country=None):
+    """Real-user answer for one observed engine (see geo/observed.py)."""
+    from geo import observed
+    loc = observed.location_code(country, settings.dataforseo_location_code)
+    try:
+        parsed, brands, cost, info = observed.observe(
+            app, prompt, settings.dataforseo_login, settings.dataforseo_password, loc)
+    except observed.ObservedError as e:
+        return ProviderResult(error=str(e), model=app)
+    except Exception as e:
+        return ProviderResult(error=f"{type(e).__name__}: {e}", model=app)
+    model = info.pop("model", app)
+    return ProviderResult(parsed=parsed, model=model, usage={"observed": info},
+                          cost_usd=cost, brands=brands)
+
+
 def available_providers(settings):
-    """Only providers whose API key is configured — everything downstream
-    (the Platforms column, tab creation, the audit loop) skips the rest."""
+    """Only engines whose credentials are configured — everything downstream
+    (the Platforms column, tab creation, the audit loop) skips the rest.
+    Each entry: {"tab", "source", "ask"(prompt, country=None)}."""
     out = {}
     for key, (tab, key_attr, models_attr, fn) in _REGISTRY.items():
         api_key = getattr(settings, key_attr)
@@ -145,6 +166,17 @@ def available_providers(settings):
             models = getattr(settings, models_attr)
             out[key] = {
                 "tab": tab,
-                "ask": (lambda prompt, _fn=fn, _k=api_key, _m=models: _fn(prompt, _k, _m)),
+                "source": "api",
+                "ask": (lambda prompt, country=None, _fn=fn, _k=api_key, _m=models: _fn(prompt, _k, _m)),
             }
+    if getattr(settings, "dataforseo_login", "") and getattr(settings, "dataforseo_password", ""):
+        from geo.engines import OBSERVED_ENGINES, ENGINES
+        enabled = settings.observed_engines or list(OBSERVED_ENGINES)
+        for key in OBSERVED_ENGINES:
+            if key in enabled:
+                out[key] = {
+                    "tab": f"Results - {ENGINES[key].label}",
+                    "source": "observed",
+                    "ask": (lambda prompt, country=None, _k=key: ask_observed(_k, prompt, settings, country)),
+                }
     return out

@@ -1,0 +1,22 @@
+# Caddy gets and renews HTTPS certificates automatically for both names.
+# APP_DOMAIN / API_DOMAIN / ACME_EMAIL come from deploy/.env.
+{
+	email {$ACME_EMAIL}
+}
+
+# The platform (dashboard, admin, sign-in)
+{$APP_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy web:3000
+}
+
+# Python side: the SEO audit / AI rank UI (embeddable) and its /api/* endpoints.
+# /api/manual_run and the cron endpoints are protected by CRON_SECRET.
+{$API_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy api:8000 {
+		transport http {
+			read_timeout 10m
+		}
+	}
+}

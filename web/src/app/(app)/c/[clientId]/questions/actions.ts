@@ -4,9 +4,21 @@ import { revalidatePath } from "next/cache";
 import { canEdit, getViewer } from "@/lib/auth";
 import { friendlyError, type ActionResult } from "@/lib/action-result";
 import { createClient } from "@/lib/supabase/server";
+import { ENGINE_KEYS } from "@/lib/types";
 
 const FUNNEL = new Set(["TOFU", "MOFU", "BOFU"]);
-const APPS = new Set(["claude", "chatgpt"]);
+const APPS = new Set(ENGINE_KEYS);
+const FREQUENCIES = new Set(["daily", "weekly", "monthly"]);
+
+/** Shared fields of the add and edit forms. */
+function scheduleFields(formData: FormData) {
+  const frequency = String(formData.get("frequency") ?? "daily");
+  const country = String(formData.get("country") ?? "").trim().toLowerCase();
+  return {
+    frequency: FREQUENCIES.has(frequency) ? frequency : "daily",
+    country: /^[a-z]{2}$/.test(country) ? country : null,
+  };
+}
 
 async function guard(clientId: number) {
   const viewer = await getViewer();
@@ -36,14 +48,14 @@ export async function addQuestion(clientId: number, _: ActionResult, formData: F
     tags,
     active: true,
     ai_apps: aiApps.length === APPS.size ? [] : aiApps,
-    frequency: "daily",
+    ...scheduleFields(formData),
     source: "platform",
     created_at: now,
     updated_at: now,
   });
   if (error) return { error: error.code === "23505" ? "That question is already tracked." : friendlyError(error) };
   revalidatePath(`/c/${clientId}/questions`);
-  return { ok: "Added. It will be asked on the next daily run." };
+  return { ok: "Added. It will be asked on the next nightly run." };
 }
 
 export async function setQuestionActive(clientId: number, questionId: number, active: boolean): Promise<ActionResult> {
@@ -86,7 +98,7 @@ export async function updateQuestion(clientId: number, questionId: number, _: Ac
   const funnel = String(formData.get("funnel_stage") ?? "");
   const tags = String(formData.get("tags") ?? "").split(",").map((t) => t.trim()).filter(Boolean).slice(0, 20);
   const aiApps = formData.getAll("ai_apps").map(String).filter((a) => APPS.has(a));
-  if (aiApps.length === 0) return { error: "Choose at least one AI app." };
+  if (aiApps.length === 0) return { error: "Choose at least one engine." };
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -97,6 +109,7 @@ export async function updateQuestion(clientId: number, questionId: number, _: Ac
       funnel_stage: FUNNEL.has(funnel) ? funnel : null,
       tags,
       ai_apps: aiApps.length === APPS.size ? [] : aiApps,
+      ...scheduleFields(formData),
       updated_at: new Date().toISOString(),
     })
     .eq("id", questionId)

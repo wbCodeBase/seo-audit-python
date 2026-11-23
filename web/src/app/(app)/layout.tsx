@@ -17,6 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               <>
                 <Link href="/clients" className="text-ink-2 hover:text-ink">Clients</Link>
                 <Link href="/admin/users" className="text-ink-2 hover:text-ink">Users</Link>
+                <Link href="/admin/usage" className="text-ink-2 hover:text-ink">Usage</Link>
               </>
             )}
             <Link href="/account" className="hidden text-muted hover:text-ink sm:inline" title="Account and password">

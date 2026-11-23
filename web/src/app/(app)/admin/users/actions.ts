@@ -7,6 +7,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const PATH = "/admin/users";
+const MEMBER_ROLES = ["viewer", "editor", "manager"] as const;
+type MemberRole = (typeof MEMBER_ROLES)[number];
+const asRole = (v: FormDataEntryValue | null): MemberRole =>
+  MEMBER_ROLES.includes(v as MemberRole) ? (v as MemberRole) : "viewer";
 const MIN_PASSWORD = 8;
 
 /**
@@ -20,7 +24,7 @@ export async function createOrGrantUser(_: ActionResult, formData: FormData): Pr
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
   const access = String(formData.get("access") ?? "");          // "admin" or a client id
-  const memberRole = formData.get("member_role") === "editor" ? "editor" : "viewer";
+  const memberRole = asRole(formData.get("member_role"));
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "Enter a valid email address." };
   const clientId = access === "admin" ? null : Number(access);
   if (access !== "admin" && !clientId) return { error: "Choose admin or a client." };
@@ -103,8 +107,9 @@ export async function setUserRole(userId: string, role: "admin" | "client"): Pro
   return { ok: "Saved." };
 }
 
-export async function setMemberRole(userId: string, clientId: number, role: "viewer" | "editor"): Promise<ActionResult> {
+export async function setMemberRole(userId: string, clientId: number, role: MemberRole): Promise<ActionResult> {
   await requireAdmin();
+  if (!MEMBER_ROLES.includes(role)) return { error: "Unknown role." };
   const supabase = await createClient();
   const { error } = await supabase.from("client_members").update({ role }).eq("user_id", userId).eq("client_id", clientId);
   if (error) return { error: friendlyError(error) };
@@ -115,7 +120,7 @@ export async function setMemberRole(userId: string, clientId: number, role: "vie
 export async function addMembership(userId: string, _: ActionResult, formData: FormData): Promise<ActionResult> {
   await requireAdmin();
   const clientId = Number(formData.get("client_id"));
-  const role = formData.get("member_role") === "editor" ? "editor" : "viewer";
+  const role = asRole(formData.get("member_role"));
   if (!clientId) return { error: "Choose a client." };
   const supabase = await createClient();
   const { error } = await supabase.from("client_members").upsert(

@@ -3,10 +3,18 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 import { RANGES } from "@/lib/filters";
-import { appLabel } from "@/lib/types";
+import { appLabel, sourceOf } from "@/lib/types";
+
+const SOURCES = [
+  { value: "observed", label: "Real user view", help: "What people actually see in ChatGPT, Gemini and Google" },
+  { value: "api", label: "API estimate", help: "Answers from the vendors' developer APIs — cheaper, less faithful" },
+  { value: "all", label: "All", help: "Both kinds together" },
+];
 
 /** One row of filters above the charts; state lives in the URL. */
-export function FiltersBar({ apps, topics }: { apps: string[]; topics: string[] }) {
+export function FiltersBar({ apps, topics, defaultSource = "all" }: {
+  apps: string[]; topics: string[]; defaultSource?: string;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
@@ -14,6 +22,8 @@ export function FiltersBar({ apps, topics }: { apps: string[]; topics: string[] 
 
   const range = sp.get("range") ?? "30";
   const selectedApps = sp.getAll("app");
+  const source = sp.get("source") ?? defaultSource;
+  const shownApps = source === "all" ? apps : apps.filter((a) => sourceOf(a) === source);
   const topic = sp.get("topic") ?? "";
 
   function update(mutate: (p: URLSearchParams) => void) {
@@ -36,6 +46,21 @@ export function FiltersBar({ apps, topics }: { apps: string[]; topics: string[] 
         ))}
       </select>
 
+      <div role="group" aria-label="Data source" className="flex rounded-lg border border-line bg-surface p-0.5 text-sm">
+        {SOURCES.map((s) => (
+          <button
+            key={s.value}
+            type="button"
+            title={s.help}
+            aria-pressed={source === s.value}
+            className={`rounded-md px-2.5 py-0.5 ${source === s.value ? "bg-surface-2 font-medium text-ink" : "text-ink-2 hover:text-ink"}`}
+            onClick={() => update((p) => { p.set("source", s.value); p.delete("app"); })}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
       <div role="group" aria-label="AI apps" className="flex flex-wrap gap-1">
         <button
           type="button"
@@ -45,7 +70,7 @@ export function FiltersBar({ apps, topics }: { apps: string[]; topics: string[] 
         >
           All AI apps
         </button>
-        {apps.map((a) => {
+        {shownApps.map((a) => {
           const on = selectedApps.includes(a);
           return (
             <button

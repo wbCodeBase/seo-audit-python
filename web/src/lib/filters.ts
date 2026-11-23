@@ -1,5 +1,6 @@
-// Dashboard filters live in the URL (?range=30&app=claude&topic=NetSuite) so
-// views are shareable and the server renders exactly what was asked for.
+// Dashboard filters live in the URL (?range=30&source=observed&app=claude&topic=NetSuite)
+// so views are shareable and the server renders exactly what was asked for.
+import { ENGINES, type Source } from "@/lib/types";
 
 export const RANGES = [
   { value: "7", label: "Last 7 days" },
@@ -31,7 +32,17 @@ export function parseFilters(sp: SP) {
   const from = shiftDays(to, -(Number(range) - 1));
   const apps = list(sp.app);
   const topics = list(sp.topic);
-  return { range, from, to, apps, topics };
+  const rawSource = typeof sp.source === "string" ? sp.source : "";
+  const source: Source | "all" = rawSource === "observed" || rawSource === "api" ? rawSource : "all";
+  return { range, from, to, apps, topics, source };
+}
+
+/** Engines the filters select: the app chips, narrowed to the data source. */
+export function selectedApps(f: { apps: string[]; source: Source | "all" }): string[] | null {
+  if (f.source === "all") return f.apps.length ? f.apps : null;
+  const inSource = ENGINES.filter((e) => e.source === f.source).map((e) => e.key);
+  const picked = f.apps.length ? f.apps.filter((a) => inSource.includes(a)) : inSource;
+  return picked.length ? picked : ["__none__"];
 }
 
 export type Filters = ReturnType<typeof parseFilters>;
@@ -42,7 +53,7 @@ export function rpcArgs(clientId: number, f: Filters) {
     p_client: clientId,
     p_from: f.from,
     p_to: f.to,
-    p_apps: f.apps.length ? f.apps : null,
+    p_apps: selectedApps(f),
     p_topics: f.topics.length ? f.topics : null,
   };
 }

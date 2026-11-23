@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { appLabel } from "@/lib/types";
+import { usd } from "@/lib/format";
 
 type Task = { question_id: number; question: string; app: string; repeat: number };
 type TaskState = Task & { status: "waiting" | "running" | "named" | "missing" | "failed"; detail?: string };
@@ -38,6 +39,8 @@ export function RunNow({ clientId, activeQuestions }: { clientId: number; active
   const runId = useRef<string | null>(null);
   const [hasRun, setHasRun] = useState(false);
   const [refreshing, startRefresh] = useTransition();
+  const [force, setForce] = useState(false);
+  const [plan, setPlan] = useState("");
 
   const update = (i: number, patch: Partial<TaskState>) =>
     setTasks((prev) => prev.map((t, j) => (j === i ? { ...t, ...patch } : t)));
@@ -49,7 +52,7 @@ export function RunNow({ clientId, activeQuestions }: { clientId: number; active
         const i = indices[next++];
         const t = list[i];
         update(i, { status: "running", detail: undefined });
-        const r = await post({ action: "task", run_id: runId.current, question_id: t.question_id, app: t.app, repeat: t.repeat });
+        const r = await post({ action: "task", client_id: clientId, run_id: runId.current, question_id: t.question_id, app: t.app, repeat: t.repeat });
         if (!r.ok || r.error) {
           update(i, { status: "failed", detail: String(r.error ?? "Failed") });
         } else {
@@ -62,7 +65,7 @@ export function RunNow({ clientId, activeQuestions }: { clientId: number; active
 
   async function finish() {
     setPhase("finishing");
-    const r = await post({ action: "finish", run_id: runId.current });
+    const r = await post({ action: "finish", client_id: clientId, run_id: runId.current });
     if (!r.ok) {
       setPhase("error");
       setMessage(String(r.error ?? "Couldn't update the dashboard."));
@@ -78,7 +81,7 @@ export function RunNow({ clientId, activeQuestions }: { clientId: number; active
   async function start() {
     setPhase("starting");
     setMessage("Reading questions…");
-    const r = await post({ action: "start", client_id: clientId });
+    const r = await post({ action: "start", client_id: clientId, force });
     if (!r.ok) {
       setPhase("error");
       setMessage(String(r.error ?? "Couldn't start."));
@@ -91,6 +94,12 @@ export function RunNow({ clientId, activeQuestions }: { clientId: number; active
     }
     runId.current = String(r.run_id);
     setHasRun(true);
+    const b = r.budget as { monthly_usd: number | null; spent_usd: number; estimated_run_usd: number; skipped_tasks: number } | undefined;
+    const notes = [b ? `Estimated cost ${usd(b.estimated_run_usd, 3)}` : ""];
+    if (b?.monthly_usd != null) notes.push(`${usd(b.spent_usd)} of ${usd(b.monthly_usd)} used this month`);
+    if (b?.skipped_tasks) notes.push(`${b.skipped_tasks} skipped to stay within budget`);
+    if (r.skipped_not_due) notes.push(`${r.skipped_not_due} question(s) not due yet`);
+    setPlan(notes.filter(Boolean).join(" · "));
     const list: TaskState[] = (r.tasks as Task[]).map((t) => ({ ...t, status: "waiting" }));
     setTasks(list);
     setPhase("running");
@@ -126,8 +135,13 @@ export function RunNow({ clientId, activeQuestions }: { clientId: number; active
       {phase === "confirm" ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-ink-2">
-            Ask all <span className="font-medium text-ink">{activeQuestions}</span> active question
-            {activeQuestions === 1 ? "" : "s"} on every AI app now? This uses API credit and takes a few minutes.
+            Ask the <span className="font-medium text-ink">{activeQuestions}</span> active question
+            {activeQuestions === 1 ? "" : "s"} on this client&apos;s engines now? This spends credit (within the monthly
+            budget) and takes a few minutes.
+            <label className="mt-1 flex items-center gap-1.5 text-xs">
+              <input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} />
+              Include weekly/monthly questions that aren&apos;t due yet
+            </label>
           </p>
           <div className="flex gap-2">
             <button className="btn" onClick={() => setPhase("idle")}>Cancel</button>
@@ -148,7 +162,7 @@ export function RunNow({ clientId, activeQuestions }: { clientId: number; active
               {!busy && failedCount > 0 && hasRun && (
                 <button className="btn" onClick={retryFailed}>Retry {failedCount} failed</button>
               )}
-              {!busy && <button className="btn" onClick={() => { setPhase("idle"); setTasks([]); setMessage(""); setHasRun(false); }}>Close</button>}
+              {!busy && <button className="btn" onClick={() => { setPhase("idle"); setTasks([]); setMessage(""); setPlan(""); setHasRun(false); }}>Close</button>}
             </div>
           </div>
           {tasks.length > 0 && (
@@ -157,6 +171,7 @@ export function RunNow({ clientId, activeQuestions }: { clientId: number; active
               <div className="h-2 rounded-full bg-accent transition-all" style={{ width: `${(done / tasks.length) * 100}%` }} />
             </div>
           )}
+          {plan && <p className="text-xs text-muted">{plan}</p>}
           {message && (
             <p className={`text-sm ${phase === "error" ? "text-critical-ink" : "text-ink-2"}`} aria-live="polite">
               {message}
@@ -173,7 +188,7 @@ export function RunNow({ clientId, activeQuestions }: { clientId: number; active
                       t.status === "named" ? "text-good-ink" : t.status === "failed" || t.status === "missing" ? "text-critical-ink" : "text-muted"}`}>
                       {t.status === "named" ? "✓" : t.status === "missing" ? "✕" : t.status === "failed" ? "!" : t.status === "running" ? "…" : "·"}
                     </span>
-                    <span className="w-16 shrink-0 text-muted">{appLabel(t.app)}</span>
+                    <span className="w-32 shrink-0 text-muted">{appLabel(t.app)}</span>
                     <span className="min-w-0 flex-1 truncate">{t.question}</span>
                     <span className="shrink-0 text-muted">{t.detail ?? (t.status === "running" ? "asking…" : "")}</span>
                   </li>
